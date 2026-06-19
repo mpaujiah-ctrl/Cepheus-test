@@ -52,40 +52,37 @@ jobs:
       
       - name: Build kernel
         run: |
-         cd kernel
-         export PATH="$HOME/proton/bin:$PATH"
-         export ARCH=arm64
-         export SUBARCH=arm64
-         export CROSS_COMPILE=aarch64-linux-gnu-
-         export CC=clang
-         export LD=ld.lld
-         export AR=llvm-ar
-         export NM=llvm-nm
-         export OBJCOPY=llvm-objcopy
-         export OBJDUMP=llvm-objdump
-         export STRIP=llvm-strip
-         export KBUILD_COMPILER_STRING=$(clang --version | head -n 1)
-         export KBUILD_BUILD_USER=mpaujiah
-         export KBUILD_BUILD_HOST=CepheusKernel
-         export KCFLAGS="-Wno-error -Wno-unused-function -Wno-implicit-function-declaration" # <-- INI PENTING
-    
-         make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
-    
-         # FORCE DISABLE CONFIG PENYAKIT
-         ./scripts/config --file out/.config -d SCHED_BOOST
-         ./scripts/config --file out/.config -d QCOM_PERF_BOOST
-         ./scripts/config --file out/.config -d QTI_SCMI_PLAT
-         ./scripts/config --file out/.config -d WALT
-         ./scripts/config --file out/.config -d ENERGY_MODEL
-         ./scripts/config --file out/.config -d MSM_GENI_IR
-         ./scripts/config --file out/.config -e SCHED_DEBUG
-         ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_BOOST # <-- Tambahan
-    
-          # HAPUS PANGGILAN FUNGSI WALT YANG NYEBELIN
-          sed -i '/FULL_THROTTLE_BOOST/d' kernel/sched/fair.c
-          sed -i '/trace_sched_load_balance_skip_tasks/d' kernel/sched/fair.c  
-          sed -i '/mark_reserved(/d' kernel/sched/fair.c
-    
+          cd kernel
+          export PATH="$HOME/proton/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CC=clang
+          export LD=ld.lld
+          export AR=llvm-ar
+          export NM=llvm-nm
+          export OBJCOPY=llvm-objcopy
+          export OBJDUMP=llvm-objdump
+          export STRIP=llvm-strip
+          export KBUILD_COMPILER_STRING=$(clang --version | head -n 1)
+          export KBUILD_BUILD_USER=mpaujiah
+          export KBUILD_BUILD_HOST=CepheusKernel
+          export KCFLAGS="-Wno-error -Wno-declaration-after-statement -Wno-unused-function -Wno-implicit-function-declaration"
+
+          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
+
+          # FORCE DISABLE CONFIG PENYAKIT - Versi Lengkap
+          ./scripts/config --file out/.config -d SCHED_BOOST
+          ./scripts/config --file out/.config -d QCOM_PERF_BOOST
+          ./scripts/config --file out/.config -d QTI_SCMI_PLAT
+          ./scripts/config --file out/.config -d WALT
+          ./scripts/config --file out/.config -d ENERGY_MODEL
+          ./scripts/config --file out/.config -d MSM_GENI_IR
+          ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_BOOST
+          ./scripts/config --file out/.config -d QCOM_SCHED_BOOST
+          ./scripts/config --file out/.config -d ONEPLUS_SCHED_BOOST
+          ./scripts/config --file out/.config -e SCHED_DEBUG
+
           make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy -j$(nproc --all) Image.gz-dtb
      
       - name: Pack AnyKernel3
