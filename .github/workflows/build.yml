@@ -45,27 +45,31 @@ jobs:
           echo "CONFIG_SCHED_DEBUG=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_MSM_GENI_IR=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
       
+      - name: Debug defconfig
+        run: |
+          echo "=== CEK 6 CONFIG PENYAKIT ==="
+          grep -E "SCHED_BOOST|QCOM_PERF_BOOST|QTI_SCMI_PLAT|WALT|SCHED_DEBUG|MSM_GENI_IR" kernel/arch/arm64/configs/vendor/cepheus_defconfig || true
+      
       - name: Build kernel
         run: |
-          export PATH="$HOME/proton/bin:$PATH"
+          cd kernel
           export ARCH=arm64
           export SUBARCH=arm64
           export KBUILD_COMPILER_STRING=$(clang --version | head -n 1)
-          cd kernel
-          make O=out vendor/cepheus_defconfig
-          make -j$(nproc) O=out \
-          ARCH=arm64 \
-          CC=clang \
-          LLVM=1 \
-          LLVM_IAS=1 \
-          CROSS_COMPILE=aarch64-linux-gnu- \
-          CLANG_TRIPLE=aarch64-linux-gnu- \
-          LD=ld.lld \
-          AR=llvm-ar \
-          NM=llvm-nm \
-          OBJCOPY=llvm-objcopy \
-          OBJDUMP=llvm-objdump \
-          STRIP=llvm-strip
+          export KBUILD_BUILD_USER=mpaujiah
+          export KBUILD_BUILD_HOST=CepheusKernel
+    
+          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy cepheus_defconfig
+    
+          # FORCE DISABLE CONFIG PENYAKIT - Timpa abis make defconfig
+          ./scripts/config --file out/.config -d SCHED_BOOST
+          ./scripts/config --file out/.config -d QCOM_PERF_BOOST
+          ./scripts/config --file out/.config -d QTI_SCMI_PLAT
+          ./scripts/config --file out/.config -d WALT
+          ./scripts/config --file out/.config -e SCHED_DEBUG
+          ./scripts/config --file out/.config -d MSM_GENI_IR
+    
+          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy -j$(nproc --all) Image.gz-dtb
       
       - name: Pack AnyKernel3
         run: |
