@@ -34,16 +34,30 @@ jobs:
           echo "CONFIG_HAVE_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_MODULES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_LTO_NONE=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
 
       - name: Build kernel
         run: |
           export PATH="$HOME/proton/bin:$PATH"
           export ARCH=arm64
           export SUBARCH=arm64
+          export KBUILD_COMPILER_STRING=$(clang --version | head -n 1)
           cd kernel
           make O=out vendor/cepheus_defconfig
-          make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- CLANG_TRIPLE=aarch64-linux-gnu- LD=ld.lld
-
+          make -j$(nproc) O=out \
+          ARCH=arm64 \
+          CC=clang \
+          LLVM=1 \
+          LLVM_IAS=1 \
+          CROSS_COMPILE=aarch64-linux-gnu- \
+          CLANG_TRIPLE=aarch64-linux-gnu- \
+          LD=ld.lld \
+          AR=llvm-ar \
+          NM=llvm-nm \
+          OBJCOPY=llvm-objcopy \
+          OBJDUMP=llvm-objdump \
+          STRIP=llvm-strip
+      
       - name: Pack AnyKernel3
         run: |
           cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
