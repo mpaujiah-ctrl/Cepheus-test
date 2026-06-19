@@ -35,6 +35,7 @@ jobs:
           echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_MODULES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_LTO_NONE=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_NR_CPUS=8" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
 
       - name: Build kernel
         run: |
