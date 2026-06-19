@@ -44,6 +44,7 @@ jobs:
           echo "CONFIG_WALT=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_SCHED_DEBUG=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_MSM_GENI_IR=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_MSM_GENI_IR=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
       
       - name: Build kernel
         run: |
