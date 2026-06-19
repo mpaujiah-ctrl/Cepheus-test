@@ -68,7 +68,7 @@ jobs:
           export KBUILD_BUILD_USER=mpaujiah
           export KBUILD_BUILD_HOST=CepheusKernel
     
-          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy cepheus_defconfig
+          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
     
           # FORCE DISABLE CONFIG PENYAKIT - Timpa abis make defconfig
           ./scripts/config --file out/.config -d SCHED_BOOST
