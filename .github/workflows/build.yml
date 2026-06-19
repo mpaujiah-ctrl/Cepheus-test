@@ -1,0 +1,59 @@
+name: Build Cepheus KSUN Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y bc bison flex libssl-dev libelf-dev build-essential git curl zip python3
+
+      - name: Clone Proton Clang
+        run: git clone --depth=1 https://github.com/kdrag0n/proton-clang.git $HOME/proton
+
+      - name: Clone Lineage Kernel
+        run: git clone --depth=1 https://github.com/LineageOS/android_kernel_xiaomi_sm8150 -b lineage-21 kernel
+
+      - name: Clone AnyKernel3
+        run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
+
+      - name: Patch KernelSU Next
+        run: |
+          cd kernel
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          cd ..
+
+      - name: Setup defconfig KSUN
+        run: |
+          echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_HAVE_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_MODULES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+
+      - name: Build kernel
+        run: |
+          export PATH="$HOME/proton/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          cd kernel
+          make O=out vendor/cepheus_defconfig
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- CLANG_TRIPLE=aarch64-linux-gnu- LD=ld.lld
+
+      - name: Pack AnyKernel3
+        run: |
+          cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+          # Jangan copy dtbo.img biar pake bawaan SparkOS
+          # Copy modules kalau ada
+          find kernel/out -name '*.ko' -exec cp {} AnyKernel3/modules/system/lib/modules/ \;
+          cd AnyKernel3 && zip -r9 ../Cepheus-KSUN-Test.zip *
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cepheus-KSUN-Test
+          path: Cepheus-KSUN-Test.zip
