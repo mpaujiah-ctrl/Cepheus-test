@@ -61,18 +61,18 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # 1. HAPUS SEMUA WALT BIAR BERSIH
-          rm -rf kernel/sched/walt.c
-          rm -f include/trace/events/walt.h
+          # Hapus HANYA implementasi walt di kernel/sched/
+          rm -f kernel/sched/walt.c
           rm -f kernel/sched/walt.h
+          # JANGAN sentuh include/trace/events/walt.h
       
-          # 2. BIKIN 1 WALT.H AJA, STUB SEMUA FUNGSI WALT YANG DIPANGGIL core.c
+          # Stub kernel/sched/walt.h
           cat > kernel/sched/walt.h << 'EOF'
           #ifndef _KERNEL_SCHED_WALT_H
           #define _KERNEL_SCHED_WALT_H
-          
+      
           struct rq; struct task_struct;
-          
+      
           static inline void update_cluster_topology(void) {}
           static inline void init_clusters(void) {}
           static inline void walt_sched_init_rq(void *rq) {}
@@ -89,17 +89,19 @@ jobs:
           static inline int do_pl_notif(void *rq) { return 0; }
           static inline void mark_task_starting(void *p) {}
           static inline void walt_update_task(struct task_struct *p, struct rq *rq, int flags) {}
-          
-          #endif /* _KERNEL_SCHED_WALT_H */
+      
+          #endif
           EOF
       
-          # 3. MATIN BLOK ONEPLUS DI fair.c
-          sed -i 's/if (sched_boost() != FULL_THROTTLE_BOOST ||/#if 0 \/\/ DISABLED ONEPLUS\n if (0 ||/' kernel/sched/fair.c
+          # Disable blok OnePlus di fair.c
+          sed -i 's/if (sched_boost() != FULL_THROTTLE_BOOST ||/#if 0 \/\/ DISABLED\n if (0 ||/' kernel/sched/fair.c
       
           make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
       
-          # 4. DISABLE CONFIG WALT/EAS
-          ./scripts/config --file out/.config -d WALT -d SCHED_WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
+          ./scripts/config --file out/.config \
+            -d WALT -d SCHED_WALT -d ENERGY_MODEL \
+            -d QCOM_SCHED_WALT -d QTI_SCHED \
+            -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
