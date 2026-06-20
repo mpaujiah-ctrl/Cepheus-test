@@ -98,6 +98,35 @@ jobs:
              | grep -oP '(?<!\w)(walt_\w+|inc_rq_walt\w*|dec_rq_walt\w*)(?=\s*\()' \
              | sort -u
           
+      - name: Generate WALT stub
+        run: |
+          cd kernel
+      
+          # Hapus walt lama
+          rm -f kernel/sched/walt.c
+          rm -f kernel/sched/walt.h
+      
+          # Script python: scan semua panggilan fungsi walt_* di kernel/sched/*.c
+          python3 << 'PYEOF'
+          import re, os, subprocess
+          
+          sched_dir = "kernel/sched"
+          c_files = [f for f in os.listdir(sched_dir) if f.endswith(".c")]
+          
+          found = set()
+          for fname in c_files:
+              path = os.path.join(sched_dir, fname)
+              with open(path) as f:
+                  content = f.read()
+              # cari semua pemanggilan fungsi yang namanya diawali walt_ atau inc_rq_walt atau dec_rq_walt
+              calls = re.findall(r'\b(walt_\w+|inc_rq_walt\w*|dec_rq_walt\w*|sched_cpu_high_irqload|same_cluster|mark_reserved|FULL_THROTTLE_BOOST)\s*\(', content)
+              found.update(calls)
+          
+          print("Fungsi WALT yang dipanggil:")
+          for f in sorted(found):
+              print(f" -", f)
+          PYEOF
+      
       - name: Build kernel
         run: |
           cd kernel
