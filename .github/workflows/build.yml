@@ -60,17 +60,19 @@ jobs:
           export CC=clang
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
-
-          # 1. HAPUS TOTAL BLOK ONEPLUS BOOST DI fair.c
-          sed -i '/sched_boost()!= FULL_THROTTLE_BOOST/,+2d' kernel/sched/fair.c
       
-          # 2. MATIIN TRACE WALT - TIMPA FILE HEADER NYA
-          echo "" > include/trace/events/walt.h
-          echo "" > include/trace/events/sched_walt.h
-
+          # 1. PATCH fair.c - BUNGKUS BLOK ONEPLUS PAKE ifdef 0
+          sed -i 's/if (sched_boost()!= FULL_THROTTLE_BOOST ||/#if 0 \/\/ DISABLED ONEPLUS BOOST\n if (sched_boost()!= FULL_THROTTLE_BOOST ||/' kernel/sched/fair.c
+          sed -i 's/^}$/} \n#endif \/\/ ONEPLUS BOOST END/' kernel/sched/fair.c
+      
+          # 2. STUB SEMUA FUNGSI WALT DI fair.c PALING ATAS
+          sed -i '1i #define trace_sched_load_balance_skip_tasks(...) do {} while(0)' kernel/sched/fair.c
+          sed -i '1i #define mark_reserved(cpu) do {} while(0)' kernel/sched/fair.c
+          sed -i '1i #define sched_boost() 0' kernel/sched/fair.c
+      
           make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
-
-          # 3. DISABLE CONFIG SEBISANYA
+      
+          # 3. DISABLE CONFIG WALT/EAS
           ./scripts/config --file out/.config -d WALT
           ./scripts/config --file out/.config -d SCHED_WALT
           ./scripts/config --file out/.config -d ENERGY_MODEL
@@ -79,9 +81,9 @@ jobs:
           ./scripts/config --file out/.config -d SCHED_BOOST
           ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
-
+      
           make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy -j$(nproc --all) Image.gz-dtb
-                  
+
       - name: Pack AnyKernel3
         run: |
           cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
