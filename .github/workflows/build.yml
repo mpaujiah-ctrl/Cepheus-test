@@ -61,17 +61,48 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # 1. PATCH fair.c - BUNGKUS BLOK ONEPLUS PAKE ifdef 0
-          sed -i 's/if (sched_boost()!= FULL_THROTTLE_BOOST ||/#if 0 \/\/ DISABLED ONEPLUS BOOST\n if (sched_boost()!= FULL_THROTTLE_BOOST ||/' kernel/sched/fair.c
-          sed -i 's/^}$/} \n#endif \/\/ ONEPLUS BOOST END/' kernel/sched/fair.c
+          # 1. BIKIN PATCH FILE BUAT DISABLE ONEPLUS + WALT
+          cat > disable-oneplus-walt.patch << 'EOF'
+          diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+          index 1234567..89abcdef 100644
+          --- a/kernel/sched/fair.c
+          +++ b/kernel/sched/fair.c
+          @@ -7825,7 +7825,7 @@ static int find_energy_efficient_cpu(...)
+                  struct sched_domain *sd;
+                  struct cpumask *cpus;
+           
+          -       if (sched_boost() != FULL_THROTTLE_BOOST ||
+          +       if (0 || /* DISABLED ONEPLUS BOOST */
+                          !task_util_est(p) && !cpu_overutilized(this_cpu))
+                          return prev_cpu;
+           
+          @@ -9418,7 +9418,7 @@ static int active_load_balance_cpu_stop(void *data)
+                  raw_spin_unlock_irq(&busiest_rq->lock);
+           
+           out:
+          -       trace_sched_load_balance_skip_tasks(busiest_cpu, target_cpu,
+          +       /* trace_sched_load_balance_skip_tasks(busiest_cpu, target_cpu, */
+                                  env.loop, env.loop_break, env.skipped);
+                  return 0;
+           }
+          @@ -11214,7 +11214,7 @@ static void pull_task(struct rq *src_rq, struct task_struct *p,
+                  set_task_cpu(p, this_cpu);
+                  /*
+                   * We had to do the set_task_cpu() after dropping rq->lock
+          -        * but mark_reserved() must be called before enqueue_task().
+          +        * but mark_reserved() must be called before enqueue_task(). */
+          -        mark_reserved(this_cpu);
+          +        /* mark_reserved(this_cpu); */
+                  enqueue_task(this_rq, p, 0);
+                  if (p->sched_class == &fair_sched_class)
+                          p->se.h_nr_running++;
+          EOF
       
-          # 2. STUB SEMUA FUNGSI WALT DI fair.c PALING ATAS
-          sed -i '1i #define trace_sched_load_balance_skip_tasks(...) do {} while(0)' kernel/sched/fair.c
-          sed -i '1i #define mark_reserved(cpu) do {} while(0)' kernel/sched/fair.c
-          sed -i '1i #define sched_boost() 0' kernel/sched/fair.c
+          # 2. APPLY PATCH
+          git apply disable-oneplus-walt.patch
       
           make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
-      
+
           # 3. DISABLE CONFIG WALT/EAS
           ./scripts/config --file out/.config -d WALT
           ./scripts/config --file out/.config -d SCHED_WALT
