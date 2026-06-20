@@ -89,24 +89,20 @@ jobs:
           static inline int do_pl_notif(void *rq) { return 0; }
           static inline void mark_task_starting(void *p) {}
           static inline void walt_update_task(struct task_struct *p, struct rq *rq, int flags) {}
-          
-          /* Fungsi yang hilang — penyebab error fair.c */
           static inline void inc_rq_walt_stats(struct rq *rq, struct task_struct *p) {}
           static inline void dec_rq_walt_stats(struct rq *rq, struct task_struct *p) {}
           static inline int sched_cpu_high_irqload(int cpu) { return 0; }
           static inline int same_cluster(int src_cpu, int dst_cpu) { return 0; }
           static inline void mark_reserved(int cpu) {}
-          static inline int sched_boost(void) { return 0; }
-          
-          /* Trace stub */
           static inline void trace_sched_load_balance_skip_tasks(int a, int b) {}
           
-          /* FULL_THROTTLE_BOOST define */
+          /* sched_boost() sudah ada di sched.h — jangan redefinisi */
+          #ifndef FULL_THROTTLE_BOOST
           #define FULL_THROTTLE_BOOST 0
+          #endif
           
           #endif /* _KERNEL_SCHED_WALT_H */
-          EOF
-      
+          EOF      
              
           make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
       
