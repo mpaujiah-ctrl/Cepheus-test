@@ -61,18 +61,41 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # 1. HAPUS SOURCE WALT, TAPI SISAIN HEADER KOSONG
-          rm -rf kernel/sched/walt.c kernel/sched/walt.h
-          mkdir -p include/trace/events/
-          echo "" > include/trace/events/walt.h  # <- Kunci utama
-          echo "" > kernel/sched/walt.h          # <- Buat core.c
+          # 1. HAPUS SOURCE WALT
+          rm -rf kernel/sched/walt.c
       
-          # 2. MATIN BLOK ONEPLUS PAKE #if 0, BUKAN #define
+          # 2. BIKIN WALT.H ISINYA STUB KOSONG BUAT SEMUA FUNGSI
+          cat > include/trace/events/walt.h << 'EOF'
+          #ifndef _WALT_H
+          #define _WALT_H
+          static inline void update_cluster_topology(void) {}
+          static inline void init_clusters(void) {}
+          static inline void walt_sched_init_rq(void *rq) {}
+          static inline void init_new_task_load(void *p) {}
+          static inline void walt_init_new_task_load(void *p) {}
+          static inline void walt_sched_fork(void *p) {}
+          static inline void walt_sched_exit(void *p) {}
+          static inline void walt_sched_idle_start(void) {}
+          static inline void walt_sched_idle_end(void) {}
+          #endif
+          EOF
+      
+          cat > kernel/sched/walt.h << 'EOF'
+          #ifndef _KERNEL_SCHED_WALT_H
+          #define _KERNEL_SCHED_WALT_H
+          static inline void update_cluster_topology(void) {}
+          static inline void init_clusters(void) {}
+          static inline void walt_sched_init_rq(void *rq) {}
+          static inline void init_new_task_load(void *p) {}
+          #endif
+          EOF
+      
+          # 3. MATIN BLOK ONEPLUS DI fair.c
           sed -i 's/if (sched_boost() != FULL_THROTTLE_BOOST ||/#if 0 \/\/ DISABLED ONEPLUS\n if (0 ||/' kernel/sched/fair.c
       
           make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
       
-          # 3. DISABLE CONFIG WALT/EAS
+          # 4. DISABLE CONFIG WALT/EAS
           ./scripts/config --file out/.config -d WALT -d SCHED_WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
