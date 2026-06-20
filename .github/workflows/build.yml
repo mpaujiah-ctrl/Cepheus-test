@@ -98,54 +98,16 @@ jobs:
              | grep -oP '(?<!\w)(walt_\w+|inc_rq_walt\w*|dec_rq_walt\w*)(?=\s*\()' \
              | sort -u
           
-      - name: Generate WALT stub
+      - name: Patch WALT stub
         run: |
           cd kernel
+      
+          # Hapus implementasi walt.c (sumber masalah)
           rm -f kernel/sched/walt.c
-          rm -f kernel/sched/walt.h
       
-          printf '%s\n' \
-            '#ifndef _KERNEL_SCHED_WALT_H' \
-            '#define _KERNEL_SCHED_WALT_H' \
-            '' \
-            'struct rq; struct task_struct; struct cfs_rq; struct sched_domain;' \
-            '' \
-            '/* Basic WALT stubs */' \
-            'static inline void walt_sched_init_rq(struct rq *rq) {}' \
-            'static inline void walt_update_last_enqueue(struct task_struct *p) {}' \
-            'static inline void walt_update_min_max_capacity(void) {}' \
-            'static inline void walt_rotate_work_init(void) {}' \
-            '' \
-            '/* inc/dec rq stats */' \
-            'static inline void inc_rq_walt_stats(struct rq *rq, struct task_struct *p) {}' \
-            'static inline void dec_rq_walt_stats(struct rq *rq, struct task_struct *p) {}' \
-            'static inline void walt_inc_cumulative_runnable_avg(struct rq *rq, struct task_struct *p) {}' \
-            'static inline void walt_dec_cumulative_runnable_avg(struct rq *rq, struct task_struct *p) {}' \
-            '' \
-            '/* OnePlus/WALT cluster helpers */' \
-            'static inline int sched_cpu_high_irqload(int cpu) { return 0; }' \
-            'static inline int same_cluster(int src_cpu, int dst_cpu) { return 0; }' \
-            'static inline void mark_reserved(int cpu) {}' \
-            'static inline void walt_adjust_nr_big_tasks(struct rq *rq, int delta, bool inc) {}' \
-            'static inline void walt_check_for_rotation(struct rq *rq) {}' \
-            'static inline void walt_fixup_cum_window_demand(struct rq *rq, s64 delta) {}' \
-            '' \
-            '/* try_to_wake_up */' \
-            'static inline void walt_try_to_wake_up(struct task_struct *p) {}' \
-            '' \
-            '/* Trace macros - variadic supaya cocok dengan semua call site */' \
-            '#define trace_sched_load_balance_skip_tasks(...) do {} while (0)' \
-            '' \
-            '/* FULL_THROTTLE_BOOST - jangan redefinisi kalau sudah ada di sched.h */' \
-            '#ifndef FULL_THROTTLE_BOOST' \
-            '#define FULL_THROTTLE_BOOST 0' \
-            '#endif' \
-            '' \
-            '#endif /* _KERNEL_SCHED_WALT_H */' \
-            > kernel/sched/walt.h
-      
-          echo "=== walt.h generated ==="
-          cat kernel/sched/walt.h
+          # JANGAN hapus/replace walt.h — biarkan original
+          # Pastikan CONFIG_SCHED_WALT=n supaya blok #else (stub) yang aktif
+          # Ini sudah di-handle via scripts/config di bawah
       
       - name: Build kernel
         run: |
@@ -160,8 +122,9 @@ jobs:
       
           make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
       
+          # Disable WALT supaya stub #else yang aktif di walt.h
           ./scripts/config --file out/.config \
-            -d WALT -d SCHED_WALT -d ENERGY_MODEL \
+            -d SCHED_WALT -d WALT -d ENERGY_MODEL \
             -d QCOM_SCHED_WALT -d QTI_SCHED \
             -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
