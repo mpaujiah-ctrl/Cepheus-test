@@ -67,36 +67,31 @@ jobs:
           export KBUILD_COMPILER_STRING=$(clang --version | head -n 1)
           export KBUILD_BUILD_USER=mpaujiah
           export KBUILD_BUILD_HOST=CepheusKernel
-          export KCFLAGS="-Wno-error"
-
-           # 1. REVERT COMMIT ONEPLUS YANG BAWA FULL_THROTTLE_BOOST
-           git revert --no-commit 7b1a9c8a5d4e 2>/dev/null || true
-           git revert --no-commit 2f9e3b1d8c7a 2>/dev/null || true
-    
-           # 2. HAPUS SELECT YANG MAKSA CONFIG JADI Y
-           sed -i '/select OPLUS_FEATURE_SCHED_ASSIST/d' arch/arm64/Kconfig
-           sed -i '/select QCOM_SCHED_BOOST/d' arch/arm64/Kconfig
-           sed -i '/select SCHED_WALT/d' arch/arm64/Kconfig
-    
-            # 3. PATCH fair.c - HAPUS BLOK FULL_THROTTLE_BOOST
-            sed -i '/sched_boost() != FULL_THROTTLE_BOOST/,/||/d' kernel/sched/fair.c
-    
-            make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
-    
-            # 4. FORCE DISABLE - Double kill
-            ./scripts/config --file out/.config -d SCHED_BOOST
-            ./scripts/config --file out/.config -d QCOM_PERF_BOOST
-            ./scripts/config --file out/.config -d QTI_SCMI_PLAT
-            ./scripts/config --file out/.config -d WALT
-            ./scripts/config --file out/.config -d ENERGY_MODEL
-            ./scripts/config --file out/.config -d MSM_GENI_IR
-            ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_ASSIST
-            ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_BOOST
-            ./scripts/config --file out/.config -d QCOM_SCHED_BOOST
-            ./scripts/config --file out/.config -e SCHED_DEBUG
-    
-            make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy -j$(nproc --all) Image.gz-dtb
+          export KCFLAGS="-Wno-error=implicit-function-declaration -Wno-error=declaration-after-statement -Wno-error=unused-function"
       
+          # 1. PATCH: Bikin fungsi WALT jadi kosong biar ga error
+          echo "static inline void trace_sched_load_balance_skip_tasks(int a, int b) {}" >> include/linux/sched.h
+          echo "static inline void mark_reserved(int cpu) {}" >> include/linux/sched.h
+          
+          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
+          
+          # 2. MATIIN SEMUA WALT/EAS CAF
+          ./scripts/config --file out/.config -d SCHED_BOOST
+          ./scripts/config --file out/.config -d QCOM_PERF_BOOST
+          ./scripts/config --file out/.config -d QTI_SCMI_PLAT
+          ./scripts/config --file out/.config -d WALT
+          ./scripts/config --file out/.config -d SCHED_WALT
+          ./scripts/config --file out/.config -d ENERGY_MODEL
+          ./scripts/config --file out/.config -d MSM_GENI_IR
+          ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_ASSIST
+          ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_BOOST
+          ./scripts/config --file out/.config -d QCOM_SCHED_BOOST
+          ./scripts/config --file out/.config -d QTI_SCHED
+          ./scripts/config --file out/.config -d QCOM_SCHED_WALT
+          ./scripts/config --file out/.config -e SCHED_DEBUG
+          
+           make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy -j$(nproc --all) Image.gz-dtb
+            
       - name: Pack AnyKernel3
         run: |
           cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
