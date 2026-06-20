@@ -87,6 +87,7 @@ jobs:
           '#endif' \
           'static inline void walt_inc_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline void walt_dec_cumulative_runnable_avg(void *rq, void *p) {}' \
+          'static inline int walt_big_tasks(int cpu) { return 0; }' \
           '#endif' \
           > kernel/sched/walt.h
       
