@@ -61,23 +61,18 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # 1. HAPUS WALT.C TAPI JANGAN HAPUS WALT.H
+          # 1. HAPUS SOURCE WALT, TAPI SISAIN HEADER KOSONG
           rm -rf kernel/sched/walt.c kernel/sched/walt.h
+          mkdir -p include/trace/events/
+          echo "" > include/trace/events/walt.h  # <- Kunci utama
+          echo "" > kernel/sched/walt.h          # <- Buat core.c
       
-          # 2. BIKIN WALT.H KOSONG BIAR #include GA ERROR
-          echo "" > include/trace/events/walt.h
-      
-          # 3. STUB SEMUA DI sched.h BIAR GA UNDECLARED
-          sed -i '1i #ifndef FULL_THROTTLE_BOOST' include/linux/sched.h
-          sed -i '2i #define FULL_THROTTLE_BOOST 0' include/linux/sched.h
-          sed -i '3i #define sched_boost() 0' include/linux/sched.h
-          sed -i '4i #define trace_sched_load_balance_skip_tasks(...) do {} while(0)' include/linux/sched.h
-          sed -i '5i #define mark_reserved(cpu) do {} while(0)' include/linux/sched.h
-          sed -i '6i #endif' include/linux/sched.h
+          # 2. MATIN BLOK ONEPLUS PAKE #if 0, BUKAN #define
+          sed -i 's/if (sched_boost() != FULL_THROTTLE_BOOST ||/#if 0 \/\/ DISABLED ONEPLUS\n if (0 ||/' kernel/sched/fair.c
       
           make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
       
-          # 4. DISABLE CONFIG WALT/EAS
+          # 3. DISABLE CONFIG WALT/EAS
           ./scripts/config --file out/.config -d WALT -d SCHED_WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
