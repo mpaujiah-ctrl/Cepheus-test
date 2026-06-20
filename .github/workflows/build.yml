@@ -102,12 +102,15 @@ jobs:
         run: |
           cd kernel
       
-          # Hapus implementasi walt.c (sumber masalah)
+          # Hapus implementasi walt.c
           rm -f kernel/sched/walt.c
       
-          # JANGAN hapus/replace walt.h — biarkan original
-          # Pastikan CONFIG_SCHED_WALT=n supaya blok #else (stub) yang aktif
-          # Ini sudah di-handle via scripts/config di bawah
+          # Patch rt.c: bungkus walt_inc/dec_cumulative_runnable_avg dengan #ifdef
+          sed -i 's/\twalt_inc_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
+          sed -i 's/\twalt_dec_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
+      
+          echo "=== Cek patch rt.c ==="
+          grep -n -A2 -B1 "CONFIG_SCHED_WALT" kernel/sched/rt.c | head -20
       
       - name: Build kernel
         run: |
