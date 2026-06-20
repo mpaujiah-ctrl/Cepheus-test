@@ -61,27 +61,24 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # 1. PATCH PAKE SED YANG LEBIH PINTAR - GA PAKE NOMOR BARIS
-          # Matin FULL_THROTTLE_BOOST
-          sed -i 's/sched_boost() != FULL_THROTTLE_BOOST/0 \/* DISABLED ONEPLUS BOOST *\//' kernel/sched/fair.c
+          # 1. HAPUS FILE WALT TOTAL BIAR GA ADA YANG INCLUDE
+          rm -rf kernel/sched/walt* include/trace/events/walt.h
           
-          # Comment fungsi WALT
-          sed -i 's/^\([[:space:]]*\)trace_sched_load_balance_skip_tasks(/\1\/* trace_sched_load_balance_skip_tasks(/' kernel/sched/fair.c
-          sed -i 's/^\([[:space:]]*\)mark_reserved(/\1\/* mark_reserved(/' kernel/sched/fair.c
+          # 2. STUB DEFINISI WALT DI HEADER GLOBAL - PALING AMAN
+          sed -i '1i #ifndef FULL_THROTTLE_BOOST' include/linux/sched.h
+          sed -i '2i #define FULL_THROTTLE_BOOST 0' include/linux/sched.h
+          sed -i '3i #define sched_boost() 0' include/linux/sched.h
+          sed -i '4i #define trace_sched_load_balance_skip_tasks(...) do {} while(0)' include/linux/sched.h
+          sed -i '5i #define mark_reserved(cpu) do {} while(0)' include/linux/sched.h
+          sed -i '6i #endif' include/linux/sched.h
       
-          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy vendor/cepheus_defconfig
+          make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
       
-          # 2. DISABLE CONFIG WALT/EAS
-          ./scripts/config --file out/.config -d WALT
-          ./scripts/config --file out/.config -d SCHED_WALT
-          ./scripts/config --file out/.config -d ENERGY_MODEL
-          ./scripts/config --file out/.config -d QCOM_SCHED_WALT
-          ./scripts/config --file out/.config -d QTI_SCHED
-          ./scripts/config --file out/.config -d SCHED_BOOST
-          ./scripts/config --file out/.config -d OPLUS_FEATURE_SCHED_ASSIST
+          # 3. DISABLE CONFIG WALT/EAS
+          ./scripts/config --file out/.config -d WALT -d SCHED_WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
-          make O=out CC=clang LD=ld.lld NM=llvm-nm AR=llvm-ar OBJCOPY=llvm-objcopy -j$(nproc --all) Image.gz-dtb
+          make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
 
       - name: Pack AnyKernel3
         run: |
