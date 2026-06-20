@@ -88,6 +88,16 @@ jobs:
           '#endif' \
           > kernel/sched/walt.h
       
+       - name: Debug WALT functions called
+         run: |
+           cd kernel
+           echo "=== SEMUA FUNGSI WALT YANG DIPANGGIL ==="
+           grep -rh 'walt_\|inc_rq_walt\|dec_rq_walt' kernel/sched/ \
+             --include="*.c" \
+              | grep -v '//' \
+              | grep -oP '(?<!\w)(walt_\w+|inc_rq_walt\w*|dec_rq_walt\w*)(?=\s*\()' \
+              | sort -u
+          
       - name: Build kernel
         run: |
           cd kernel
