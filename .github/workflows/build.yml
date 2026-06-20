@@ -105,12 +105,18 @@ jobs:
           # Hapus implementasi walt.c
           rm -f kernel/sched/walt.c
       
-          # Patch rt.c: bungkus walt_inc/dec_cumulative_runnable_avg dengan #ifdef
+          # Patch rt.c: bungkus 2 call walt yang tidak punya guard
           sed -i 's/\twalt_inc_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
           sed -i 's/\twalt_dec_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
       
-          echo "=== Cek patch rt.c ==="
-          grep -n -A2 -B1 "CONFIG_SCHED_WALT" kernel/sched/rt.c | head -20
+          # Patch deadline.c: bungkus 2 call walt yang tidak punya guard
+          sed -i 's/\twalt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));\n#endif/' kernel/sched/deadline.c
+          sed -i 's/\twalt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));\n#endif/' kernel/sched/deadline.c
+      
+          echo "=== Verifikasi patch rt.c ==="
+          grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/rt.c | head -20
+          echo "=== Verifikasi patch deadline.c ==="
+          grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
       
       - name: Build kernel
         run: |
