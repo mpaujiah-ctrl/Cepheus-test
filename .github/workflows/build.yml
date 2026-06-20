@@ -85,6 +85,8 @@ jobs:
           '#ifndef FULL_THROTTLE_BOOST' \
           '#define FULL_THROTTLE_BOOST 0' \
           '#endif' \
+          'static inline void walt_inc_cumulative_runnable_avg(void *rq, void *p) {}' \
+          'static inline void walt_dec_cumulative_runnable_avg(void *rq, void *p) {}' \
           '#endif' \
           > kernel/sched/walt.h
       
