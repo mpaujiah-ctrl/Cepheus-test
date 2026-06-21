@@ -23,7 +23,16 @@ jobs:
 
       - name: Configure AnyKernel3
         run: |
-          sed -i 's/do.devicecheck=1/do.devicecheck=0/' AnyKernel3/anykernel.sh
+          cd AnyKernel3
+    
+          # Disable device check
+          sed -i 's/do.devicecheck=1/do.devicecheck=0/' anykernel.sh
+          
+          # Fix block device path untuk Qualcomm sm8150 (cepheus)
+          sed -i 's|block=/dev/block/platform/omap/omap_hsmmc.0/by-name/|block=/dev/block/bootdevice/by-name/|' anykernel.sh
+          
+          echo "=== Cek anykernel.sh ==="
+          grep -E "devicecheck|block=" anykernel.sh | head -10
 
       - name: Patch KernelSU Next
         run: |
