@@ -120,18 +120,7 @@ jobs:
           grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/rt.c | head -20
           echo "=== Verifikasi patch deadline.c ==="
           grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
-
-      - name: Nuke sched_boost sysctl entry
-        run: |
-          cd kernel
-          # Hapus entry sched_boost dari kern_table di sysctl.c
-          sed -i '/sched_updown_migrate_handler/d' kernel/sysctl.c
-          # Hapus juga extern declaration-nya
-          sed -i '/extern int sched_updown_migrate_handler/d' include/linux/sched/sysctl.h
-          
-          echo "=== Verifikasi sysctl.c ==="
-          grep -n "sched_updown_migrate_handler" kernel/sysctl.c || echo "AMAN, UDAH DIHAPUS"
-      
+           
       - name: Build kernel
         run: |
           cd kernel
