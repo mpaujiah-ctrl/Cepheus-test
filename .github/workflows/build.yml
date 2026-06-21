@@ -90,6 +90,18 @@ jobs:
           'static inline int walt_big_tasks(int cpu) { return 0; }' \
           '#endif' \
           > kernel/sched/walt.h
+
+      - name: Patch core.c for sched_updown_migrate_handler
+        run: |
+          cd kernel
+          # Cek dulu kalo belum ada
+          if ! grep -q "sched_updown_migrate_handler" kernel/sched/core.c; then
+            # Tambahin fungsi dummy di paling bawah core.c sebelum #endif
+            sed -i '$i\/* Dummy for sysctl when SCHED_BOOST disabled *\/\nint sched_updown_migrate_handler(struct ctl_table *table, int write, void __user *buffer, size_t *lenp, loff_t *ppos) { return 0; }' kernel/sched/core.c
+          fi
+          
+          echo "=== Verifikasi core.c ==="
+          grep -A2 "sched_updown_migrate_handler" kernel/sched/core.c
       
       - name: Debug WALT functions called
         run: |
