@@ -90,6 +90,41 @@ jobs:
           'static inline int walt_big_tasks(int cpu) { return 0; }' \
           '#endif' \
           > kernel/sched/walt.h
+
+          # Patch sysctl.c: hapus entry sched_upmigrate dan sched_downmigrate
+          python3 << 'PYEOF'
+          with open('kernel/sysctl.c', 'r') as f:
+              content = f.read()
+          
+          # Bungkus 2 entry dengan ifdef
+          old = '''\t{
+          \t\t.procname\t= "sched_upmigrate",
+          \t\t.data\t\t= &sysctl_sched_capacity_margin_up,
+          \t\t.maxlen\t\t= sizeof(unsigned int) * MAX_MARGIN_LEVELS,
+          \t\t.mode\t\t= 0644,
+          \t\t.proc_handler\t= sched_updown_migrate_handler,
+          \t},
+          \t{
+          \t\t.procname\t= "sched_downmigrate",
+          \t\t.data\t\t= &sysctl_sched_capacity_margin_down,
+          \t\t.maxlen\t\t= sizeof(unsigned int) * MAX_MARGIN_LEVELS,
+          \t\t.mode\t\t= 0644,
+          \t\t.proc_handler\t= sched_updown_migrate_handler,
+          \t},'''
+          
+          new = '''#ifdef CONFIG_SCHED_WALT
+          ''' + old + '''
+          #endif'''
+          
+          if old in content:
+              content = content.replace(old, new)
+              print("PATCH OK: sched_updown_migrate_handler dibungkus ifdef")
+          else:
+              print("WARNING: pattern tidak ditemukan, cek manual!")
+          
+          with open('kernel/sysctl.c', 'w') as f:
+              f.write(content)
+          PYEOF
         
       - name: Debug WALT functions called
         run: |
