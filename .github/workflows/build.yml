@@ -21,6 +21,10 @@ jobs:
       - name: Clone AnyKernel3
         run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
 
+      - name: Configure AnyKernel3
+        run: |
+          sed -i 's/do.devicecheck=1/do.devicecheck=0/' AnyKernel3/anykernel.sh
+
       - name: Patch KernelSU Next
         run: |
           cd kernel
@@ -177,7 +181,7 @@ jobs:
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
-
+          
       - name: Pack AnyKernel3
         run: |
           cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
