@@ -88,7 +88,6 @@ jobs:
           'static inline void walt_inc_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline void walt_dec_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline int walt_big_tasks(int cpu) { return 0; }' \
-          'static inline int sched_updown_migrate_handler(struct ctl_table *table, int write, void __user *buffer, size_t *lenp, loff_t *ppos) { return 0; }' \
           '#endif' \
           > kernel/sched/walt.h
       
