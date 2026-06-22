@@ -189,11 +189,11 @@ jobs:
             -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
-          make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz
+          make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
       - name: Pack AnyKernel3
         run: |
-          cp kernel/out/arch/arm64/boot/Image.gz AnyKernel3/
+          cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
           # Jangan copy dtbo.img biar pake bawaan SparkOS
           # Copy modules kalau ada
           find kernel/out -name '*.ko' -exec cp {} AnyKernel3/modules/system/lib/modules/ \;
@@ -203,4 +203,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: Cepheus-KSUN-Test
-            path: Cepheus-KSUN-Test.zip
+            path: |
+              Cepheus-KSUN-Test.zip
+              kernel/out/arch/arm64/boot/Image.gz-dtb
