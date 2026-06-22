@@ -68,11 +68,10 @@ jobs:
         run: |
           cd kernel
           rm -f kernel/sched/walt.c
-          rm -f kernel/sched/walt.h
-      
-          printf '%s\n' \
-          '#ifndef _KERNEL_SCHED_WALT_H' \
-          '#define _KERNEL_SCHED_WALT_H' \
+          cat > kernel/sched/walt.h << 'EOF'
+          '#ifndef _WALT_H
+          '#define _WALT_H
+          
           'struct rq; struct task_struct; struct sched_domain;' \
           'static inline void update_cluster_topology(void) {}' \
           'static inline void init_clusters(void) {}' \
@@ -95,6 +94,8 @@ jobs:
           'static inline int sched_cpu_high_irqload(int cpu) { return 0; }' \
           'static inline int same_cluster(int src_cpu, int dst_cpu) { return 0; }' \
           'static inline void mark_reserved(int cpu) {}' \
+          'static inline unsigned long sched_irqload(int cpu) { return 0; }
+          'static inline unsigned long cpu_util_irq(int cpu) { return 0; }
           '#define trace_sched_load_balance_skip_tasks(...) do {} while (0)' \
           '#ifndef FULL_THROTTLE_BOOST' \
           '#define FULL_THROTTLE_BOOST 0' \
