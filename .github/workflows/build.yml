@@ -183,7 +183,7 @@ jobs:
       
           # Fix libyaml - stub yamltree.c
           mkdir -p scripts/dtc
-          cat > kernel/scripts/dtc/yamltree.c << 'EOF'
+          cat > scripts/dtc/yamltree.c << 'EOF'
           #include <stdio.h>
           void yaml_stream_end_event_initialize(void) {}
           void yaml_emitter_emit(void) {}
