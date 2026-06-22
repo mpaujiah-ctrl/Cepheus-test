@@ -180,9 +180,10 @@ jobs:
           export CC=clang
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
-                         
-          # Fix vdso arm issue
           export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+
+          # HAPUS file stub bekas nyoba-nyoba tadi
+          rm -f scripts/dtc/yamltree.c
           
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
@@ -194,6 +195,13 @@ jobs:
             -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST \
             -d COMPAT_VDSO
           ./scripts/config --file out/.config -e SCHED_DEBUG
+
+          # Disable DTC_YAML HARUS setelah defconfig
+          ./scripts/config --file out/.config -d DTC_YAML -d SCHED_WALT -d WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST -d COMPAT_VDSO
+          ./scripts/config --file out/.config -e SCHED_DEBUG
+          
+          # Wajib regen config biar DTC_YAML beneran mati
+          make O=out CC=clang LD=ld.lld olddefconfig
       
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
