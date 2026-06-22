@@ -34,6 +34,39 @@ jobs:
           echo "=== Cek anykernel.sh ==="
           grep -E "devicecheck|block=" anykernel.sh | head -10
 
+          - name: Configure AnyKernel3
+            run: |
+              cat > AnyKernel3/anykernel.sh << 'EOF'
+          # AnyKernel3 config for Cepheus (Mi 9)
+          properties() { '
+          kernel.string=Cepheus Kernel by mpaujiah
+          do.devicecheck=0
+          do.modules=0
+          do.systemless=1
+          do.cleanup=1
+          do.cleanuponabort=0
+          device.name1=cepheus
+          device.name2=
+          device.name3=
+          device.name4=
+          device.name5=
+          supported.versions=
+          supported.patchlevels=
+          '; }
+          
+          block=/dev/block/bootdevice/by-name/boot
+          is_slot_device=0
+          ramdisk_compression=auto
+          
+          . tools/ak3-core.sh
+          
+          split_boot
+          flash_boot
+          EOF
+          
+              echo "=== anykernel.sh ==="
+              cat AnyKernel3/anykernel.sh
+
       - name: Patch KernelSU Next
         run: |
           cd kernel
@@ -189,11 +222,11 @@ jobs:
             -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
-          make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
+          make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz
           
       - name: Pack AnyKernel3
         run: |
-          cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+          cp kernel/out/arch/arm64/boot/Image.gz AnyKernel3/
           # Jangan copy dtbo.img biar pake bawaan SparkOS
           # Copy modules kalau ada
           find kernel/out -name '*.ko' -exec cp {} AnyKernel3/modules/system/lib/modules/ \;
