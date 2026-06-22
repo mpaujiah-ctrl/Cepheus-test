@@ -196,12 +196,18 @@ jobs:
             -d COMPAT_VDSO
           ./scripts/config --file out/.config -e SCHED_DEBUG
 
-          # Disable DTC_YAML HARUS setelah defconfig
-          ./scripts/config --file out/.config -d DTC_YAML -d SCHED_WALT -d WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST -d COMPAT_VDSO
+          # Cara 1: Disable semua yg bikin masalah, HARUS 1 baris biar aman
+          ./scripts/config --file out/.config -d DTC_YAML -d SCHED_WALT -d WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST -d COMPAT_VDSO -d WALT_DEBUG
           ./scripts/config --file out/.config -e SCHED_DEBUG
+          
+          # Cara 2: Paksa timpa DTC_YAML dari awal sebelum olddefconfig
+          echo "CONFIG_DTC_YAML=n" >> out/.config
           
           # Wajib regen config biar DTC_YAML beneran mati
           make O=out CC=clang LD=ld.lld olddefconfig
+
+          # DEBUG: Cek DTC_YAML beneran mati apa engga
+          grep DTC_YAML out/.config || echo "DTC_YAML udah ilang"
       
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
