@@ -191,7 +191,7 @@ jobs:
             -d DTC_YAML \
             -d SCHED_WALT -d WALT -d ENERGY_MODEL \
             -d QCOM_SCHED_WALT -d QTI_SCHED \
-            -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
+            -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST \
             -d COMPAT_VDSO
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
