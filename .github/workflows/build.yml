@@ -15,8 +15,8 @@ jobs:
       - name: Clone Proton Clang
         run: git clone --depth=1 https://github.com/kdrag0n/proton-clang.git $HOME/proton
 
-      - name: Clone Lineage Kernel
-        run: git clone --depth=1 https://github.com/LineageOS/android_kernel_xiaomi_sm8150 kernel
+      - name: Clone Spark Kernel
+        run: git clone --depth=1 https://github.com/Spark-Devices/android_kernel_xiaomi_cepheus kernel
 
       - name: Clone AnyKernel3
         run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
