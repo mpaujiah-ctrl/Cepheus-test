@@ -34,9 +34,7 @@ jobs:
           echo "=== Cek anykernel.sh ==="
           grep -E "devicecheck|block=" anykernel.sh | head -10
 
-          - name: Configure AnyKernel3
-            run: |
-              cat > AnyKernel3/anykernel.sh << 'EOF'
+            cat > AnyKernel3/anykernel.sh << 'EOF'
           # AnyKernel3 config for Cepheus (Mi 9)
           properties() { '
           kernel.string=Cepheus Kernel by mpaujiah
