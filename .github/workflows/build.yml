@@ -16,8 +16,8 @@ jobs:
         run: git clone --depth=1 https://github.com/kdrag0n/proton-clang.git $HOME/proton
 
       - name: Clone Spark Kernel
-        run: git clone --depth=1 https://github.com/Spark-Devices/android_kernel_xiaomi_cepheus kernel
-
+        run: git clone --depth=1 -b pyro https://github.com/Spark-Devices/android_kernel_xiaomi_cepheus kernel
+   
       - name: Clone AnyKernel3
         run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
 
@@ -42,7 +42,7 @@ jobs:
 
       - name: Setup defconfig KSUN
         run: |
-          echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_HAVE_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
           echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
@@ -180,7 +180,7 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          make O=out CC=clang LD=ld.lld vendor/cepheus_defconfig
+          make O=out CC=clang LD=ld.lld cepheus_defconfig
       
           # Disable WALT supaya stub #else yang aktif di walt.h
           ./scripts/config --file out/.config \
