@@ -44,6 +44,9 @@ jobs:
           rm -rf drivers/staging/kernelsu
           sed -i '/kernelsu/d' drivers/staging/Kconfig
           sed -i '/kernelsu/d' drivers/staging/Makefile
+
+          # Stub path_umount untuk kernel 4.14
+          echo 'int path_umount(struct path *path, int flags) { return 0; }' >> fs/namespace.c
           
           cd ..
 
