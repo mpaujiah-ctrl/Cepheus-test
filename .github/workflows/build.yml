@@ -194,12 +194,27 @@ jobs:
                                    
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
-          # Nuclear option - hapus vdso32 folder
-          rm -rf arch/arm64/kernel/vdso32
+          # Fix yaml - hapus seluruh blok ifeq yaml
+          python3 << 'PYEOF'
+          with open('scripts/dtc/Makefile', 'r') as f:
+              lines = f.readlines()
           
-          # Patch Makefile supaya tidak cari vdso32
-          sed -i '/vdso32/d' arch/arm64/kernel/Makefile
-          sed -i '/vdso32/d' arch/arm64/Makefile
+          result = []
+          skip = False
+          for line in lines:
+              if 'pkg-config' in line and 'yaml' in line:
+                  skip = True
+              if skip:
+                  if line.strip() == 'endif':
+                      skip = False
+                      continue
+                  continue
+              result.append(line)
+          
+          with open('scripts/dtc/Makefile', 'w') as f:
+              f.writelines(result)
+          print("Done patching dtc/Makefile")
+          PYEOF
 
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
