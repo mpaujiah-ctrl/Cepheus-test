@@ -195,12 +195,12 @@ jobs:
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
           # Disable WALT supaya stub #else yang aktif di walt.h
-          ./scripts/config --file out/.config \
+          scripts/config --file out/.config \
             -d SCHED_WALT -d WALT -d ENERGY_MODEL \
             -d QCOM_SCHED_WALT -d QTI_SCHED \
             -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
             -d VDSO32
-          ./scripts/config --file out/.config -e SCHED_DEBUG
+          scripts/config --file out/.config -e SCHED_DEBUG
       
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
