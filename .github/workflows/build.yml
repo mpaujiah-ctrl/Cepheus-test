@@ -183,21 +183,14 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # Fix yaml
+          # Fix yaml - cara paling nuclear
           python3 -c "
-          lines = open('scripts/dtc/Makefile').readlines()
-          result = []
-          skip = False
-          for line in lines:
-              if 'pkg-config' in line and 'yaml' in line:
-                  skip = True
-              if skip:
-                  if line.strip() == 'endif':
-                      skip = False
-                  continue
-              result.append(line)
-          open('scripts/dtc/Makefile','w').writelines(result)
-          print('yaml patch done')
+          import re
+          content = open('scripts/dtc/Makefile').read()
+          # Hapus seluruh blok ifeq yaml sampai endif
+          content = re.sub(r'ifeq.*?pkg-config.*?endif\n', '', content, flags=re.DOTALL)
+          open('scripts/dtc/Makefile','w').write(content)
+          print('done')
           "
           
           # Fix vdso32
