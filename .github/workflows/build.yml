@@ -183,14 +183,15 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # Fix yaml - cara paling nuclear
+          # Fix dt_to_yaml di dtc.c
           python3 -c "
-          import re
-          content = open('scripts/dtc/Makefile').read()
-          # Hapus seluruh blok ifeq yaml sampai endif
-          content = re.sub(r'ifeq.*?pkg-config.*?endif\n', '', content, flags=re.DOTALL)
-          open('scripts/dtc/Makefile','w').write(content)
-          print('done')
+          content = open('scripts/dtc/dtc.c').read()
+          # Tambahkan stub sebelum main function
+          stub = 'void dt_to_yaml(struct dt_info *dti, FILE *f) {}\n\n'
+          # Cari posisi sebelum int main
+          content = content.replace('int main(', stub + 'int main(', 1)
+          open('scripts/dtc/dtc.c', 'w').write(content)
+          print('dt_to_yaml stub added')
           "
           
           # Fix vdso32
