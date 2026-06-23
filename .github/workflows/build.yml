@@ -183,15 +183,12 @@ jobs:
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
       
-          # Fix dt_to_yaml di dtc.c
           python3 -c "
           content = open('scripts/dtc/dtc.c').read()
-          # Tambahkan stub sebelum main function
-          stub = 'void dt_to_yaml(struct dt_info *dti, FILE *f) {}\n\n'
-          # Cari posisi sebelum int main
+          stub = 'void dt_to_yaml(FILE *f, struct dt_info *dti) {}\n\n'
           content = content.replace('int main(', stub + 'int main(', 1)
           open('scripts/dtc/dtc.c', 'w').write(content)
-          print('dt_to_yaml stub added')
+          print('dt_to_yaml stub fixed')
           "
           
           # Fix vdso32
