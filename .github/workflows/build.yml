@@ -41,8 +41,9 @@ jobs:
           cd kernel
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v1.0.5
           
-          # Hapus duplikat KernelSU driver
           rm -rf drivers/staging/kernelsu
+          sed -i '/kernelsu/d' drivers/staging/Kconfig
+          sed -i '/kernelsu/d' drivers/staging/Makefile
           
           cd ..
 
