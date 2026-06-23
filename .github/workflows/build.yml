@@ -68,13 +68,11 @@ jobs:
         run: |
           cd kernel
           rm -f kernel/sched/walt.c
-          cat > kernel/sched/walt.h << 'EOF'
-          '#ifndef _WALT_H
-          '#define _WALT_H
-
-          struct task_struct;
-          struct rq;
-          
+          rm -f kernel/sched/walt.h
+      
+          printf '%s\n' \
+          '#ifndef _KERNEL_SCHED_WALT_H' \
+          '#define _KERNEL_SCHED_WALT_H' \
           'struct rq; struct task_struct; struct sched_domain;' \
           'static inline void update_cluster_topology(void) {}' \
           'static inline void init_clusters(void) {}' \
@@ -97,18 +95,10 @@ jobs:
           'static inline int sched_cpu_high_irqload(int cpu) { return 0; }' \
           'static inline int same_cluster(int src_cpu, int dst_cpu) { return 0; }' \
           'static inline void mark_reserved(int cpu) {}' \
-          'static inline unsigned long sched_irqload(int cpu) { return 0; }
-          'static inline unsigned long cpu_util_irq(int cpu) { return 0; }
           '#define trace_sched_load_balance_skip_tasks(...) do {} while (0)' \
           '#ifndef FULL_THROTTLE_BOOST' \
           '#define FULL_THROTTLE_BOOST 0' \
           '#endif' \
-          // Fix error core.c - tambahin ini
-          static inline void init_new_task_load(struct task_struct *p) {}
-          static inline void mark_task_starting(struct task_struct *p) {}
-          static inline void set_window_start(struct rq *rq) {}
-          static inline void update_task_ravg(struct task_struct *p, struct rq *rq, int event, u64 wallclock, u64 irqtime) {}
-          
           'static inline void walt_inc_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline void walt_dec_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline int walt_big_tasks(int cpu) { return 0; }' \
@@ -190,28 +180,43 @@ jobs:
           export CC=clang
           export LD=ld.lld
           export KCFLAGS="-Wno-error"
-          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-
-          # HAPUS sed, ganti pake ini: bikin yamltree.c isinya cuma 1 fungsi
-          cat > scripts/dtc/yamltree.c << 'EOF'
-          void dt_to_yaml(void) {}
+      
+          # Fix libyaml - stub yamltree.c
+          cat > kernel/scripts/dtc/yamltree.c << 'EOF'
+          #include <stdio.h>
+          void yaml_stream_end_event_initialize(void) {}
+          void yaml_emitter_emit(void) {}
+          void yaml_emitter_delete(void) {}
+          void yaml_emitter_open(void) {}
+          void yaml_emitter_close(void) {}
+          void yaml_emitter_set_output_file(void) {}
+          void yaml_emitter_initialize(void) {}
+          void yaml_document_initialize(void) {}
+          void yaml_document_delete(void) {}
+          void yaml_emitter_dump(void) {}
+          void yaml_scalar_event_initialize(void) {}
+          void yaml_sequence_start_event_initialize(void) {}
+          void yaml_sequence_end_event_initialize(void) {}
+          void yaml_mapping_start_event_initialize(void) {}
+          void yaml_mapping_end_event_initialize(void) {}
+          void yaml_stream_start_event_initialize(void) {}
+          void yaml_document_start_event_initialize(void) {}
+          void yaml_document_end_event_initialize(void) {}
+          void yaml_alias_event_initialize(void) {}
           EOF
+          
+          # Fix vdso arm issue
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
           # Disable WALT supaya stub #else yang aktif di walt.h
           ./scripts/config --file out/.config \
-            -d DTC_YAML \
             -d SCHED_WALT -d WALT -d ENERGY_MODEL \
             -d QCOM_SCHED_WALT -d QTI_SCHED \
-            -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST \
-            -d COMPAT_VDSO
+            -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
           ./scripts/config --file out/.config -e SCHED_DEBUG
-
-          ./scripts/config --file out/.config -d DTC_YAML -d SCHED_WALT -d WALT -d ENERGY_MODEL -d QCOM_SCHED_WALT -d QTI_SCHED -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST -d COMPAT_VDSO -d WALT_DEBUG
-          ./scripts/config --file out/.config -e SCHED_DEBUG
-          
-          make O=out CC=clang LD=ld.lld olddefconfig                
+      
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
       - name: Pack AnyKernel3
