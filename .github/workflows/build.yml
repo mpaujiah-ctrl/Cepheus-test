@@ -185,6 +185,12 @@ jobs:
           # Force disable yaml di dtc - hapus yamltree.o dari build
           sed -i '/yamltree/d' scripts/dtc/Makefile
           sed -i '/yaml-0.1/d' scripts/dtc/Makefile
+
+          # Disable vdso32 - tidak dibutuhkan untuk build kita
+          sed -i 's/CONFIG_VDSO32=y/CONFIG_VDSO32=n/' arch/arm64/Kconfig
+
+          # Atau via scripts/config setelah defconfig:
+          ./scripts/config --file out/.config -d VDSO32
                                    
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
@@ -193,6 +199,7 @@ jobs:
             -d SCHED_WALT -d WALT -d ENERGY_MODEL \
             -d QCOM_SCHED_WALT -d QTI_SCHED \
             -d SCHED_BOOST -d OPLUS_FEATURE_SCHED_ASSIST
+            -d VDSO32
           ./scripts/config --file out/.config -e SCHED_DEBUG
       
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
