@@ -71,6 +71,9 @@ jobs:
           cat > kernel/sched/walt.h << 'EOF'
           '#ifndef _WALT_H
           '#define _WALT_H
+
+          struct task_struct;
+          struct rq;
           
           'struct rq; struct task_struct; struct sched_domain;' \
           'static inline void update_cluster_topology(void) {}' \
@@ -100,6 +103,12 @@ jobs:
           '#ifndef FULL_THROTTLE_BOOST' \
           '#define FULL_THROTTLE_BOOST 0' \
           '#endif' \
+          // Fix error core.c - tambahin ini
+          static inline void init_new_task_load(struct task_struct *p) {}
+          static inline void mark_task_starting(struct task_struct *p) {}
+          static inline void set_window_start(struct rq *rq) {}
+          static inline void update_task_ravg(struct task_struct *p, struct rq *rq, int event, u64 wallclock, u64 irqtime) {}
+          
           'static inline void walt_inc_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline void walt_dec_cumulative_runnable_avg(void *rq, void *p) {}' \
           'static inline int walt_big_tasks(int cpu) { return 0; }' \
