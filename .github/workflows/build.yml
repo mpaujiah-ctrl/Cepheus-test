@@ -181,6 +181,10 @@ jobs:
           export CC=clang
           export LD=ld.lld
           export KCFLAGS="-Wno-error"     
+
+          # Force disable yaml di dtc - hapus yamltree.o dari build
+          sed -i '/yamltree/d' scripts/dtc/Makefile
+          sed -i '/yaml-0.1/d' scripts/dtc/Makefile
                                    
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
