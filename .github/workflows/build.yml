@@ -194,11 +194,13 @@ jobs:
                                    
           make O=out CC=clang LD=ld.lld cepheus_defconfig
       
-          # Edit .config langsung
-          sed -i 's/CONFIG_VDSO32=y/CONFIG_VDSO32=n/' out/.config
-          sed -i 's/CONFIG_SCHED_WALT=y/CONFIG_SCHED_WALT=n/' out/.config
-          sed -i 's/CONFIG_SCHED_BOOST=y/CONFIG_SCHED_BOOST=n/' out/.config
-      
+          # Nuclear option - hapus vdso32 folder
+          rm -rf arch/arm64/kernel/vdso32
+          
+          # Patch Makefile supaya tidak cari vdso32
+          sed -i '/vdso32/d' arch/arm64/kernel/Makefile
+          sed -i '/vdso32/d' arch/arm64/Makefile
+
           make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
           
       - name: Pack AnyKernel3
