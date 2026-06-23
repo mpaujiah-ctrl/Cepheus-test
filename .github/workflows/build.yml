@@ -95,7 +95,6 @@ jobs:
           'static inline void dec_rq_walt_stats(struct rq *rq, struct task_struct *p) {}' \
           'static inline int sched_cpu_high_irqload(int cpu) { return 0; }' \
           'static inline int same_cluster(int src_cpu, int dst_cpu) { return 0; }' \
-          'static inline void mark_reserved(int cpu) {}' \
           '#define trace_sched_load_balance_skip_tasks(...) do {} while (0)' \
           '#ifndef FULL_THROTTLE_BOOST' \
           '#define FULL_THROTTLE_BOOST 0' \
