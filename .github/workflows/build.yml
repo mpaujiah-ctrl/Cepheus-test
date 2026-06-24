@@ -53,20 +53,20 @@ jobs:
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_HAVE_KPROBES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_MODULES=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_LTO_NONE=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_NR_CPUS=8" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_NO_HZ_FULL=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_NO_HZ_IDLE=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_SCHED_BOOST=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_QCOM_PERF_BOOST=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_QTI_SCMI_PLAT=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_WALT=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_SCHED_DEBUG=y" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
-          echo "CONFIG_MSM_GENI_IR=n" >> kernel/arch/arm64/configs/vendor/cepheus_defconfig
+          echo "CONFIG_KPROBES=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_HAVE_KPROBES=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_MODULES=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_LTO_NONE=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_NR_CPUS=8" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_NO_HZ_FULL=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_NO_HZ_IDLE=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_SCHED_BOOST=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_QCOM_PERF_BOOST=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_QTI_SCMI_PLAT=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_WALT=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_SCHED_DEBUG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_MSM_GENI_IR=n" >> kernel/arch/arm64/configs/cepheus_defconfig
       
       - name: Debug defconfig
         run: |
