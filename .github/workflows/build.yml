@@ -55,7 +55,12 @@ jobs:
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KPROBES=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_HAVE_KPROBES=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/cepheus_defconfig          
+          echo "CONFIG_KALLSYMS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_UTS_NS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_IPC_NS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_USER_NS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_PID_NS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_NET_NS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_MODULES=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_LTO_NONE=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_NR_CPUS=8" >> kernel/arch/arm64/configs/cepheus_defconfig
