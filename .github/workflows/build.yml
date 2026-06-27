@@ -77,46 +77,27 @@ jobs:
       - name: Manual patch fs/open.c for SUSFS
         run: |
           cd kernel
-          python3 << 'PYEOF'
-          with open('fs/open.c', 'r') as f:
-              content = f.read()
-
-          # Tambah SUSFS sus_path check setelah KernelSU block di faccessat
-          old = '''		// KernelSU - start
-            		ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-            		// KernelSU - end
+          cat > /tmp/patch_open.py << 'PYEOF'
+            import sys
             
-            		if (mode & ~S_IRWXO)'''
+            with open('fs/open.c', 'r') as f:
+                content = f.read()
             
-                      new = '''		// KernelSU - start
-            		ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-            		// KernelSU - end
+            old = '\t\t// KernelSU - start\n\t\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t\t// KernelSU - end\n\n\t\tif (mode & ~S_IRWXO)'
             
-            #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-            		{
-            			struct filename* fname;
-            			int status;
-            			int error;
-            			fname = getname_safe(filename);
-            			status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
-            			putname_safe(fname);
-            			if (status) {
-            				return error;
-            			}
-            		}
-            #endif
+            new = '\t\t// KernelSU - start\n\t\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\t\t{\n\t\t\tstruct filename* fname;\n\t\t\tint status;\n\t\t\tint error;\n\t\t\tfname = getname_safe(filename);\n\t\t\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\t\t\tputname_safe(fname);\n\t\t\tif (status) {\n\t\t\t\treturn error;\n\t\t\t}\n\t\t}\n#endif\n\n\t\tif (mode & ~S_IRWXO)'
             
-            		if (mode & ~S_IRWXO)'''
+            if old in content:
+                content = content.replace(old, new)
+                print("PATCH OK")
+            else:
+                print("WARNING: konteks tidak ditemukan!")
+                sys.exit(1)
             
-                      if old in content:
-                          content = content.replace(old, new)
-                          print("PATCH OK: SUSFS sus_path ditambah ke faccessat")
-                      else:
-                          print("WARNING: konteks tidak ditemukan, cek manual!")
-            
-                      with open('fs/open.c', 'w') as f:
-                          f.write(content)
-                      PYEOF
+            with open('fs/open.c', 'w') as f:
+                f.write(content)
+            PYEOF
+                      python3 /tmp/patch_open.py
       
       - name: Show SUSFS Reject
         if: always()
