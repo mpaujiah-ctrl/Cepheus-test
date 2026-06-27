@@ -99,6 +99,17 @@ jobs:
             PYEOF
                       python3 /tmp/patch_open.py
       
+      - name: Debug open.c context
+        if: always()
+        run: |
+            cd kernel
+            echo "=== open.c.rej ==="
+            cat fs/open.c.rej || echo "tidak ada"
+            echo "=== grep susfs di open.c ==="
+            grep -n "susfs\|ksu_handle_faccessat\|IRWXO\|do_faccessat" fs/open.c | head -30
+            echo "=== line 380-430 open.c ==="
+            sed -n '380,430p' fs/open.c
+      
       - name: Show SUSFS Reject
         if: always()
         run: |
