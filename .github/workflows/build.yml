@@ -73,6 +73,50 @@ jobs:
           cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
       
+      - name: Manual patch fs/open.c for SUSFS
+        run: |
+          cd kernel
+          python3 << 'PYEOF'
+          with open('fs/open.c', 'r') as f:
+              content = f.read()
+
+          # Tambah SUSFS sus_path check setelah KernelSU block di faccessat
+          old = '''		// KernelSU - start
+            		ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+            		// KernelSU - end
+            
+            		if (mode & ~S_IRWXO)'''
+            
+                      new = '''		// KernelSU - start
+            		ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+            		// KernelSU - end
+            
+            #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+            		{
+            			struct filename* fname;
+            			int status;
+            			int error;
+            			fname = getname_safe(filename);
+            			status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
+            			putname_safe(fname);
+            			if (status) {
+            				return error;
+            			}
+            		}
+            #endif
+            
+            		if (mode & ~S_IRWXO)'''
+            
+                      if old in content:
+                          content = content.replace(old, new)
+                          print("PATCH OK: SUSFS sus_path ditambah ke faccessat")
+                      else:
+                          print("WARNING: konteks tidak ditemukan, cek manual!")
+            
+                      with open('fs/open.c', 'w') as f:
+                          f.write(content)
+                      PYEOF
+      
       - name: Show SUSFS Reject
         if: always()
         run: |
