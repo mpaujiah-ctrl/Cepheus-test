@@ -59,15 +59,15 @@ jobs:
       - name: Apply SUSFS Patch
         run: |
           cd kernel
-          cp ../viaoto/50_add_susfs_in_kernel-4.14.patch .
+          cp ../kernel_patches/50_add_susfs_in_kernel-4.14.patch .
           patch -p1 < 50_add_susfs_in_kernel-4.14.patch || true
       
           # Copy semua file SUSFS dari repo viaoto
-          cp ../viaoto/fs/susfs.c fs/
-          cp ../viaoto/fs/sus_su.c fs/
-          cp ../viaoto/include/linux/susfs.h include/linux/
-          cp ../viaoto/include/linux/sus_su.h include/linux/
-          cp ../viaoto/include/linux/sus_def.h include/linux/
+          cp ../kernel_patches/fs/susfs.c fs/
+          cp ../kernel_patches/fs/sus_su.c fs/
+          cp ../kernel_patches/include/linux/susfs.h include/linux/
+          cp ../kernel_patches/include/linux/sus_su.h include/linux/
+          cp ../kernel_patches/include/linux/sus_def.h include/linux/
       
           echo "=== CEK FILE SUSFS ==="
           ls -l fs/susfs.c fs/sus_su.c
