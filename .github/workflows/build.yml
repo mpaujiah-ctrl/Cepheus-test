@@ -93,6 +93,15 @@ jobs:
           PYEOF
                     python3 /tmp/patch_open.py    
            
+      - name: Debug SUSFS in open.c
+        if: always()
+        run: |
+          cd kernel
+          echo "=== Semua susfs reference di open.c ==="
+          grep -n "susfs\|sus_path\|getname_safe\|putname_safe\|SUS_PATH" fs/open.c
+          echo "=== Isi open.c.rej lengkap ==="
+          cat fs/open.c.rej || echo "tidak ada rej"
+      
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
