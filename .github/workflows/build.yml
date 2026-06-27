@@ -55,70 +55,60 @@ jobs:
           cd ..
 
       - name: Apply SUSFS Patch
-        continue-on-error: true
         run: |
-          cd kernel
-          cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
-          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
-
-          # Cek apakah ada reject
-          if find . -name "*.rej" | grep -q .; then
-            echo "=== REJECT FILES ==="
-            find . -name "*.rej" -exec echo {} \;
-            find . -name "*.rej" -exec cat {} \;
-          fi
+           cd kernel
+           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
+           patch -p1 < 50_add_susfs_in_kernel-4.14.patch
           
-          # Copy SUSFS source files ke kernel
-          cp ../susfs/kernel_patches/fs/susfs.c fs/
-          cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
-          cp ../susfs/kernel_patches/fs/sus_su.c fs/
-          cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+           # Copy semua file SUSFS secara manual
+           cp ../susfs/kernel_patches/fs/susfs.c fs/
+           cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
+           cp ../susfs/kernel_patches/fs/sus_su.c fs/
+           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+          
+           echo "=== CEK FILE SUSFS ==="
+           ls -l fs/susfs.c fs/sus_su.c
+           ls -l include/linux/susfs.h include/linux/sus_su.h
       
       - name: Manual patch fs/open.c for SUSFS
         run: |
           cd kernel
-          cat > /tmp/patch_open.py << 'PYEOF'
-              import sys
+          python3 << 'PYEOF
+              import re
+          
+          with open('fs/open.c', 'r') as f:
+              content = f.read()
+          
+          pattern = re.compile(r'ksu_handle_faccessat\(.*\);\n\t// KernelSU - end\n\n\tif \(mode & ~S_IRWXO\)')
+          replacement = '''ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+          // KernelSU - end
+          
+          #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+          {
+              struct filename* fname;
+              int status;
+              int error;
+              fname = getname_safe(filename);
+              status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
+              putname_safe(fname);
+              if (status) {
+                  return error;
+              }
+          }
+          #endif
+          
+          \tif (mode & ~S_IRWXO)'''
+          
+          new_content, count = pattern.subn(replacement, content)
+          if count > 0:
+              print("PATCH OK: SUSFS ditambah ke faccessat")
+          else:
+              print("WARNING: konteks tidak ditemukan!")
+          
+          with open('fs/open.c', 'w') as f:
+              f.write(new_content)
+          PYEOF
               
-              with open('fs/open.c', 'r') as f:
-                  content = f.read()
-              
-              old = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
-              
-              new = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\t{\n\t\tstruct filename* fname;\n\t\tint status;\n\t\tint error;\n\t\tfname = getname_safe(filename);\n\t\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\t\tputname_safe(fname);\n\t\tif (status) {\n\t\t\treturn error;\n\t\t}\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
-              
-              if old in content:
-                  content = content.replace(old, new)
-                  print("PATCH OK: SUSFS ditambah ke faccessat")
-              else:
-                  print("WARNING: konteks tidak ditemukan!")
-                  sys.exit(1)
-              
-              with open('fs/open.c', 'w') as f:
-                  f.write(content)
-              PYEOF
-                        python3 /tmp/patch_open.py
-      
-      - name: Debug open.c context
-        if: always()
-        run: |
-            cd kernel
-            echo "=== open.c.rej ==="
-            cat fs/open.c.rej || echo "tidak ada"
-            echo "=== grep susfs di open.c ==="
-            grep -n "susfs\|ksu_handle_faccessat\|IRWXO\|do_faccessat" fs/open.c | head -30
-            echo "=== line 380-430 open.c ==="
-            sed -n '380,430p' fs/open.c
-      
-      - name: Show SUSFS Reject
-        if: always()
-        run: |
-          cd kernel
-          echo "=== fs/open.c.rej ==="
-          cat fs/open.c.rej || echo "tidak ada"
-          echo "=== Konteks asli di open.c sekitar line 389 ==="
-          sed -n '380,410p' fs/open.c
-      
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
