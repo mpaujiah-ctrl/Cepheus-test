@@ -56,30 +56,33 @@ jobs:
 
       - name: Apply SUSFS Patch
         run: |
-           cd kernel
-           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
-           patch -p1 < 50_add_susfs_in_kernel-4.14.patch
-          
-           # Copy semua file SUSFS secara manual
-           cp ../susfs/kernel_patches/fs/susfs.c fs/
-           cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
-           cp ../susfs/kernel_patches/fs/sus_su.c fs/
-           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
-          
-           echo "=== CEK FILE SUSFS ==="
-           ls -l fs/susfs.c fs/sus_su.c
-           ls -l include/linux/susfs.h include/linux/sus_su.h
+          cd kernel
+          cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
+          patch -p1 < 50_add_susfs_in_kernel-4.14.patch || {
+            echo "Patch gagal, cek fs/open.c.rej"
+            exit 1
+          }
+      
+          # Copy semua file SUSFS secara manual
+          cp ../susfs/kernel_patches/fs/susfs.c fs/
+          cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
+          cp ../susfs/kernel_patches/fs/sus_su.c fs/
+          cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+      
+          echo "=== CEK FILE SUSFS ==="
+          ls -l fs/susfs.c fs/sus_su.c
+          ls -l include/linux/susfs.h include/linux/sus_su.h
       
       - name: Manual patch fs/open.c for SUSFS
         run: |
           cd kernel
-          python3 << 'PYEOF
-              import re
+          python3 << 'PYEOF'
+          import re
           
           with open('fs/open.c', 'r') as f:
               content = f.read()
           
-          pattern = re.compile(r'ksu_handle_faccessat\(.*\);\n\t// KernelSU - end\n\n\tif \(mode & ~S_IRWXO\)')
+          pattern = re.compile(r'ksu_handle_faccessat\(.*\);\n\t// KernelSU - end\n\n\tif \(mode & ~S_IRWXO\)', re.MULTILINE)
           replacement = '''ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
           // KernelSU - end
           
@@ -103,7 +106,7 @@ jobs:
           if count > 0:
               print("PATCH OK: SUSFS ditambah ke faccessat")
           else:
-              print("WARNING: konteks tidak ditemukan!")
+              print("WARNING: konteks tidak ditemukan, cek fs/open.c manual!")
           
           with open('fs/open.c', 'w') as f:
               f.write(new_content)
@@ -140,6 +143,11 @@ jobs:
           echo "CONFIG_KSU_SUSFS_SPOOFER=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_WITH_KPROBES=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
       
       - name: Debug defconfig
         run: |
