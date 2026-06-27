@@ -294,7 +294,7 @@ jobs:
           # Jangan copy dtbo.img biar pake bawaan SparkOS
           # Copy modules kalau ada
           find kernel/out -name '*.ko' -exec cp {} AnyKernel3/modules/system/lib/modules/ \;
-          cd AnyKernel3 && zip -r9 ../Cepheus-KSUN-Test.zip *
+          cd AnyKernel3 && zip -r9 ../Cepheus-KSUN+SUSFS-Test.zip *
 
       - name: Upload artifact   
         uses: actions/upload-artifact@v4
