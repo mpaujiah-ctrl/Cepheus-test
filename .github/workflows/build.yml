@@ -59,6 +59,13 @@ jobs:
           cd kernel
           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
           patch -p1 < 50_add_susfs_in_kernel-4.14.patch
+
+          # Cek apakah ada reject
+          if find . -name "*.rej" | grep -q .; then
+            echo "=== REJECT FILES ==="
+            find . -name "*.rej" -exec echo {} \;
+            find . -name "*.rej" -exec cat {} \;
+          fi
           
           # Copy SUSFS source files ke kernel
           cp ../susfs/kernel_patches/fs/susfs.c fs/
