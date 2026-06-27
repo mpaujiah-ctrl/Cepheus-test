@@ -25,9 +25,7 @@ jobs:
 
       - name: Clone SUSFS
         run: |
-          git clone https://gitlab.com/1392726643/susfs4ksu.git
-          cd susfs4ksu
-          git checkout kernel-4.14
+          git clone --depth=1 https://gitlab.com/1392726643/susfs4ksu.git susfs
 
       - name: Configure AnyKernel3
         run: |
@@ -59,59 +57,41 @@ jobs:
       - name: Apply SUSFS Patch
         run: |
           cd kernel
-          cp ../susfs4ksu/kernel-4.14/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
-          patch -p1 < 50_add_susfs_in_kernel-4.14.patch || true
+          cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
+          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
+                  
+          # Copy SUSFS source files ke kernel
+          cp ../susfs/kernel_patches/fs/susfs.c fs/
+          cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
+          cp ../susfs/kernel_patches/fs/sus_su.c fs/
+          cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+          cp ../susfs/kernel_patches/include/linux/sus_def.h include/linux/
       
-          # Copy semua file SUSFS dari repo viaoto GitLab
-          cp ../susfs4ksu/kernel-4.14/kernel_patches/fs/susfs.c fs/
-          cp ../susfs4ksu/kernel-4.14/kernel_patches/fs/sus_su.c fs/
-          cp ../susfs4ksu/kernel-4.14/kernel_patches/include/linux/susfs.h include/linux/
-          cp ../susfs4ksu/kernel-4.14/kernel_patches/include/linux/sus_su.h include/linux/
-          cp ../susfs4ksu/kernel-4.14/kernel_patches/include/linux/susfs_def.h include/linux/
-      
-          echo "=== CEK FILE SUSFS ==="
-          ls -l fs/susfs.c fs/sus_su.c
-          ls -l include/linux/susfs.h include/linux/sus_su.h include/linux/susfs_def.h
-
       - name: Manual patch fs/open.c for SUSFS
         run: |
           cd kernel
-          python3 << 'PYEOF'
-          import re
-          
-          with open('fs/open.c', 'r') as f:
-              content = f.read()
-          
-          pattern = re.compile(r'ksu_handle_faccessat\(.*\);\n\t// KernelSU - end\n\n\tif \(mode & ~S_IRWXO\)', re.MULTILINE)
-          replacement = '''ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-          // KernelSU - end
-          
-          #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-          {
-              struct filename* fname;
-              int status;
-              int error;
-              fname = getname_safe(filename);
-              status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
-              putname_safe(fname);
-              if (status) {
-                  return error;
-              }
-          }
-          #endif
-          
-          \tif (mode & ~S_IRWXO)'''
-          
-          new_content, count = pattern.subn(replacement, content)
-          if count > 0:
-              print("PATCH OK: SUSFS ditambah ke faccessat")
-          else:
-              print("WARNING: konteks tidak ditemukan, cek fs/open.c manual!")
-          
-          with open('fs/open.c', 'w') as f:
-              f.write(new_content)
-          PYEOF
+          cat > /tmp/patch_open.py << 'PYEOF'
+              import sys
               
+              with open('fs/open.c', 'r') as f:
+                  content = f.read()
+              
+              old = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
+              
+              new = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\t{\n\t\tstruct filename* fname;\n\t\tint status;\n\t\tint error;\n\t\tfname = getname_safe(filename);\n\t\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\t\tputname_safe(fname);\n\t\tif (status) {\n\t\t\treturn error;\n\t\t}\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
+              
+              if old in content:
+                  content = content.replace(old, new)
+                  print("PATCH OK: SUSFS ditambah ke faccessat")
+              else:
+                  print("WARNING: konteks tidak ditemukan!")
+                  sys.exit(1)
+              
+              with open('fs/open.c', 'w') as f:
+                  f.write(content)
+              PYEOF
+                        python3 /tmp/patch_open.py      
+           
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
