@@ -1,4 +1,4 @@
-name: Build Cepheus KSUN Test
+name: Build Cepheus KSUN+SUSFS Test
 
 on:
   workflow_dispatch:
@@ -72,6 +72,15 @@ jobs:
           cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
           cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+      
+      - name: Show SUSFS Reject
+        if: always()
+        run: |
+          cd kernel
+          echo "=== fs/open.c.rej ==="
+          cat fs/open.c.rej || echo "tidak ada"
+          echo "=== Konteks asli di open.c sekitar line 389 ==="
+          sed -n '380,410p' fs/open.c
       
       - name: Setup defconfig KSUN
         run: |
@@ -264,7 +273,7 @@ jobs:
       - name: Upload artifact   
         uses: actions/upload-artifact@v4
         with:
-            name: Cepheus-KSUN-Test
+            name: Cepheus-KSUN+SUSFS-Test
             path: |
-              Cepheus-KSUN-Test.zip
+              Cepheus-KSUN+SUSFS-Test.zip
               kernel/out/arch/arm64/boot/Image.gz-dtb
