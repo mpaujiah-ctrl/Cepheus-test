@@ -58,10 +58,8 @@ jobs:
         run: |
           cd kernel
           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
-          patch -p1 < 50_add_susfs_in_kernel-4.14.patch || {
-            echo "Patch gagal, cek fs/open.c.rej"
-            exit 1
-          }
+          # Jalankan patch, tapi kalau ada gagal (misalnya di fs/open.c), lanjutkan ke manual patch
+          patch -p1 < 50_add_susfs_in_kernel-4.14.patch || true
       
           # Copy semua file SUSFS secara manual
           cp ../susfs/kernel_patches/fs/susfs.c fs/
@@ -77,40 +75,40 @@ jobs:
         run: |
           cd kernel
           python3 << 'PYEOF'
-          import re
-          
-          with open('fs/open.c', 'r') as f:
-              content = f.read()
-          
-          pattern = re.compile(r'ksu_handle_faccessat\(.*\);\n\t// KernelSU - end\n\n\tif \(mode & ~S_IRWXO\)', re.MULTILINE)
-          replacement = '''ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-          // KernelSU - end
-          
-          #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-          {
-              struct filename* fname;
-              int status;
-              int error;
-              fname = getname_safe(filename);
-              status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
-              putname_safe(fname);
-              if (status) {
-                  return error;
-              }
-          }
-          #endif
-          
-          \tif (mode & ~S_IRWXO)'''
-          
-          new_content, count = pattern.subn(replacement, content)
-          if count > 0:
-              print("PATCH OK: SUSFS ditambah ke faccessat")
-          else:
-              print("WARNING: konteks tidak ditemukan, cek fs/open.c manual!")
-          
-          with open('fs/open.c', 'w') as f:
-              f.write(new_content)
-          PYEOF
+            import re
+            
+            with open('fs/open.c', 'r') as f:
+                content = f.read()
+            
+            pattern = re.compile(r'ksu_handle_faccessat\(.*\);\n\t// KernelSU - end\n\n\tif \(mode & ~S_IRWXO\)', re.MULTILINE)
+            replacement = '''ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+            // KernelSU - end
+            
+            #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+            {
+                struct filename* fname;
+                int status;
+                int error;
+                fname = getname_safe(filename);
+                status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
+                putname_safe(fname);
+                if (status) {
+                    return error;
+                }
+            }
+            #endif
+            
+            \tif (mode & ~S_IRWXO)'''
+            
+            new_content, count = pattern.subn(replacement, content)
+            if count > 0:
+                print("PATCH OK: SUSFS ditambah ke faccessat")
+            else:
+                print("WARNING: konteks tidak ditemukan, cek fs/open.c manual!")
+            
+            with open('fs/open.c', 'w') as f:
+                f.write(new_content)
+            PYEOF
               
       - name: Setup defconfig KSUN
         run: |
