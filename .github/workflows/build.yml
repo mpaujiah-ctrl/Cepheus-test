@@ -78,26 +78,26 @@ jobs:
         run: |
           cd kernel
           cat > /tmp/patch_open.py << 'PYEOF'
-            import sys
-            
-            with open('fs/open.c', 'r') as f:
-                content = f.read()
-            
-            old = '\t\t// KernelSU - start\n\t\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t\t// KernelSU - end\n\n\t\tif (mode & ~S_IRWXO)'
-            
-            new = '\t\t// KernelSU - start\n\t\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\t\t{\n\t\t\tstruct filename* fname;\n\t\t\tint status;\n\t\t\tint error;\n\t\t\tfname = getname_safe(filename);\n\t\t\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\t\t\tputname_safe(fname);\n\t\t\tif (status) {\n\t\t\t\treturn error;\n\t\t\t}\n\t\t}\n#endif\n\n\t\tif (mode & ~S_IRWXO)'
-            
-            if old in content:
-                content = content.replace(old, new)
-                print("PATCH OK")
-            else:
-                print("WARNING: konteks tidak ditemukan!")
-                sys.exit(1)
-            
-            with open('fs/open.c', 'w') as f:
-                f.write(content)
-            PYEOF
-                      python3 /tmp/patch_open.py
+              import sys
+              
+              with open('fs/open.c', 'r') as f:
+                  content = f.read()
+              
+              old = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
+              
+              new = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\t{\n\t\tstruct filename* fname;\n\t\tint status;\n\t\tint error;\n\t\tfname = getname_safe(filename);\n\t\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\t\tputname_safe(fname);\n\t\tif (status) {\n\t\t\treturn error;\n\t\t}\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
+              
+              if old in content:
+                  content = content.replace(old, new)
+                  print("PATCH OK: SUSFS ditambah ke faccessat")
+              else:
+                  print("WARNING: konteks tidak ditemukan!")
+                  sys.exit(1)
+              
+              with open('fs/open.c', 'w') as f:
+                  f.write(content)
+              PYEOF
+                        python3 /tmp/patch_open.py
       
       - name: Debug open.c context
         if: always()
