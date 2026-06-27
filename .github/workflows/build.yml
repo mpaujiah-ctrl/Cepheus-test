@@ -23,6 +23,10 @@ jobs:
       - name: Clone AnyKernel3
         run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
 
+      - name: Clone SUSFS
+        run: |
+          git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git susfs
+
       - name: Configure AnyKernel3
         run: |
           cd AnyKernel3
@@ -50,6 +54,18 @@ jobs:
           
           cd ..
 
+      - name: Apply SUSFS Patch
+        run: |
+          cd kernel
+          cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
+          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
+          
+          # Copy SUSFS source files ke kernel
+          cp ../susfs/kernel_patches/fs/susfs.c fs/
+          cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
+          cp ../susfs/kernel_patches/fs/sus_su.c fs/
+          cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+      
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
@@ -72,6 +88,15 @@ jobs:
           echo "CONFIG_WALT=n" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_SCHED_DEBUG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_MSM_GENI_IR=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOFER=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_WITH_KPROBES=n" >> kernel/arch/arm64/configs/cepheus_defconfig
       
       - name: Debug defconfig
         run: |
