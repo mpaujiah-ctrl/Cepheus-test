@@ -25,7 +25,7 @@ jobs:
 
       - name: Clone SUSFS
         run: |
-          git clone --depth=1 https://gitlab.com/1392726643/susfs4ksu.git susfs
+          git clone --depth=1 --branch kernel-4.14 https://gitlab.com/simonpunk/susfs4ksu.git susfs
 
       - name: Configure AnyKernel3
         run: |
@@ -59,16 +59,18 @@ jobs:
         run: |
           cd kernel
           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
-          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
+          
           cp ../susfs/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
-          patch -p1 < 10_enable_susfs_for_ksu.patch
-                  
+               
           # Copy SUSFS source files ke kernel
           cp ../susfs/kernel_patches/fs/susfs.c fs/
           cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
           cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
           cp ../susfs/kernel_patches/include/linux/sus_def.h include/linux/
+          
+          patch -p1 < 10_enable_susfs_for_ksu.patch
+          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
       
       - name: Manual patch fs/open.c for SUSFS
         run: |
