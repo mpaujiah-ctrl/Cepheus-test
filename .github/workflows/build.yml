@@ -129,6 +129,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo 'CONFIG_LOCALVERSION="-TURTLE-SUSFS"' >> kernel/arch/arm64/configs/cepheus_defconfig
       
       - name: Debug defconfig
         run: |
