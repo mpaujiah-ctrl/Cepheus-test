@@ -61,15 +61,30 @@ jobs:
           # Jalankan patch, kalau ada gagal (misalnya di fs/open.c), lanjutkan ke manual patch
           patch -p1 < 50_add_susfs_in_kernel-4.14.patch || true
 
-          # Copy semua file SUSFS secara manual
-          cp ../susfs/kernel_patches/fs/susfs.c fs/
-          cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
-          cp ../susfs/kernel_patches/fs/sus_su.c fs/
-          cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
+          # Copy semua file SUSFS secara manual dengan pengecekan jalur
+          for f in susfs.c sus_su.c; do
+            if [ -f ../susfs/fs/$f ]; then
+              cp ../susfs/fs/$f fs/
+            elif [ -f ../susfs/kernel_patches/fs/$f ]; then
+              cp ../susfs/kernel_patches/fs/$f fs/
+            else
+              echo "WARNING: $f tidak ditemukan"
+            fi
+          done
+
+          for h in susfs.h sus_su.h; do
+            if [ -f ../susfs/include/linux/$h ]; then
+              cp ../susfs/include/linux/$h include/linux/
+            elif [ -f ../susfs/kernel_patches/include/linux/$h ]; then
+              cp ../susfs/kernel_patches/include/linux/$h include/linux/
+            else
+              echo "WARNING: $h tidak ditemukan"
+            fi
+          done
 
           echo "=== CEK FILE SUSFS ==="
-          ls -l fs/susfs.c fs/sus_su.c
-          ls -l include/linux/susfs.h include/linux/sus_su.h
+          ls -l fs/susfs.c fs/sus_su.c || true
+          ls -l include/linux/susfs.h include/linux/sus_su.h || true
 
       - name: Manual patch fs/open.c for SUSFS
         run: |
