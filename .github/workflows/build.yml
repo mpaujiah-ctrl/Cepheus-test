@@ -396,35 +396,31 @@ jobs:
       - name: Fix susfs_init call
         run: |
           cat > /tmp/fix_susfs_init.py << 'PYEOF'
-          with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
-          content = f.read()
+import re
 
-          # Tambah include susfs.h
-          if 'susfs.h' not in content:
-            old = '#include <linux/fs.h>'
-            new = '#include <linux/fs.h>\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif'
-          content = content.replace(old, new, 1)
-          print("OK: include susfs.h ditambah ke core_hook.c")
+with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
+    content = f.read()
 
-          # Tambah susfs_init() call di ksu_init
-          old = 'void ksu_core_init(void)'
-          new = 'void ksu_core_init(void)'
-          if old in content:
-          # Cari baris pertama dalam fungsi ksu_core_init
-          content = content.replace(
-          'void ksu_core_init(void)\n{',
-          'void ksu_core_init(void)\n{\n#ifdef CONFIG_KSU_SUSFS\n\tsusfs_init();\n#endif'
-          )
-          print("OK: susfs_init() ditambah ke ksu_core_init")
-          else:
-          print("WARNING: ksu_core_init tidak ditemukan!")
+if 'susfs.h' not in content:
+    content = content.replace(
+        '#include <linux/fs.h>',
+        '#include <linux/fs.h>\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif',
+        1
+    )
+    print("OK: include susfs.h ditambah")
 
-          with open('kernel/drivers/kernelsu/core_hook.c', 'w') as f:
-          f.write(content)
-          PYEOF
+content = content.replace(
+    'void ksu_core_init(void)\n{',
+    'void ksu_core_init(void)\n{\n#ifdef CONFIG_KSU_SUSFS\n\tsusfs_init();\n#endif'
+)
+print("OK: susfs_init ditambah ke ksu_core_init")
+
+with open('kernel/drivers/kernelsu/core_hook.c', 'w') as f:
+    f.write(content)
+PYEOF
           python3 /tmp/fix_susfs_init.py
           grep -n "susfs_init\|susfs.h" kernel/drivers/kernelsu/core_hook.c | head -10
-      
+     
       - name: Build kernel
         run: |
           cd kernel
