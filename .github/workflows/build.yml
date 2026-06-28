@@ -7,6 +7,9 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      
       - name: Install deps
         run: |
           sudo apt update
@@ -395,30 +398,7 @@ jobs:
       
       - name: Fix susfs_init call
         run: |
-          cat > /tmp/fix_susfs_init.py << 'PYEOF'
-import re
-
-with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
-    content = f.read()
-
-if 'susfs.h' not in content:
-    content = content.replace(
-        '#include <linux/fs.h>',
-        '#include <linux/fs.h>\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif',
-        1
-    )
-    print("OK: include susfs.h ditambah")
-
-content = content.replace(
-    'void ksu_core_init(void)\n{',
-    'void ksu_core_init(void)\n{\n#ifdef CONFIG_KSU_SUSFS\n\tsusfs_init();\n#endif'
-)
-print("OK: susfs_init ditambah ke ksu_core_init")
-
-with open('kernel/drivers/kernelsu/core_hook.c', 'w') as f:
-    f.write(content)
-PYEOF
-          python3 /tmp/fix_susfs_init.py
+          python3 .github/scripts/fix_susfs_init.py
           grep -n "susfs_init\|susfs.h" kernel/drivers/kernelsu/core_hook.c | head -10
      
       - name: Build kernel
