@@ -77,6 +77,10 @@ jobs:
           ls -la include/linux/susfs_def.h || echo "FILE TIDAK ADA!"
           echo "=== Isi susfs_def.h ==="
           cat include/linux/susfs_def.h | head -30
+          echo "=== Fungsi susfs_sus_path di susfs.h ==="
+          grep -n "susfs_sus_path\|SYSCALL_FAMILY\|sus_path" include/linux/susfs.h | head -20
+          echo "=== Fungsi di susfs.c ==="
+          grep -n "^int\|^void\|^bool\|^static int\|sus_path" fs/susfs.c | head -20
 
       - name: Debug susfs.h content
         if: always()
