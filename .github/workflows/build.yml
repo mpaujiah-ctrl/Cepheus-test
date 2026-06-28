@@ -105,7 +105,7 @@ jobs:
           config KSU_SUSFS_SUS_KSTAT
           	bool "Enable sus kstat"
           	depends on KSU_SUSFS
-          	default n
+          	default y
           
           config KSU_SUSFS_SUS_OVERLAYFS
           	bool "Enable sus overlayfs"
@@ -215,7 +215,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=n" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOFER=y" >> kernel/arch/arm64/configs/cepheus_defconfig
@@ -334,6 +334,12 @@ jobs:
           echo "=== Verifikasi patch deadline.c ==="
           grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
            
+      - name: Add INODE_STATE_SUS_KSTAT to sus_def.h
+        run: |
+          cd kernel/include/linux
+          grep -q "INODE_STATE_SUS_KSTAT" sus_def.h || \
+            echo "#define INODE_STATE_SUS_KSTAT 2" >> sus_def.h
+      
       - name: Build kernel
         run: |
           cd kernel
