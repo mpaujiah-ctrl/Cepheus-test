@@ -334,6 +334,12 @@ jobs:
           echo "=== Verifikasi patch deadline.c ==="
           grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
            
+      - name: Patch task_mmu.c for SUSFS
+        run: |
+          cd kernel/fs/proc
+          grep -q "susfs.h" task_mmu.c || \
+            sed -i '1i #ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif' task_mmu.c
+       
       - name: Add INODE_STATE_SUS_KSTAT to sus_def.h
         run: |
           cd kernel/include/linux
