@@ -391,7 +391,7 @@ jobs:
           EOF
       
           # Tambahkan ke Makefile
-          sed -i '/obj-y/s/$/ susfs_stub.o/' kernel/fs/Makefile
+          echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
       
       - name: Build kernel
         run: |
