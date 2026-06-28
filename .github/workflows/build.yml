@@ -99,27 +99,7 @@ jobs:
           
           config KSU_SUSFS_SPOOFER
               bool "Enable SUSFS spoofer"
-              depends on KSU_SUSFS
-          
-          config KSU_SUSFS_OPEN_REDIRECT
-              bool "Enable SUSFS open redirect"
-              depends on KSU_SUSFS
-
-          config KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
-              bool "Enable SUSFS auto add sus bind mount"
-              depends on KSU_SUSFS
-
-          config KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND
-              bool "Enable SUSFS auto add try umount for bind"
-              depends on KSU_SUSFS
-
-          config KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
-              bool "Enable SUSFS hide ksu susfs symbol"
-              depends on KSU_SUSFS
-
-          config KSU_SUSFS_SPOOF_BOOTCONFIG
-              bool "Enable SUSFS logging"
-              depends on KSU_SUSFS
+              depends on KSU_SUSFS         
           EOF
 
       - name: Debug Kconfig SUSFS
