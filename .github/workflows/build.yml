@@ -74,25 +74,43 @@ jobs:
           cd kernel
           cat > /tmp/patch_open.py << 'PYEOF'
           import sys
-          
+
           with open('fs/open.c', 'r') as f:
-              content = f.read()
-          
-          old = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
-          
-          new = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\t{\n\t\tstruct filename* fname;\n\t\tint status;\n\t\tint error;\n\t\tfname = getname_safe(filename);\n\t\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\t\tputname_safe(fname);\n\t\tif (status) {\n\t\t\treturn error;\n\t\t}\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
-          
-          if old in content:
-              content = content.replace(old, new)
-              print("PATCH OK: SUSFS ditambah ke faccessat")
+            content = f.read()
+
+          # Patch 1: tambah deklarasi variabel setelah lookup_flags
+          old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
+
+          new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
+
+          # Patch 2: tambah sus_path check setelah KernelSU block
+          old2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
+
+          new2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tfname = getname_safe(filename);\n\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\tputname_safe(fname);\n\tif (status) {\n\t\treturn error;\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
+
+          ok1 = ok2 = False
+
+          if old1 in content:
+            content = content.replace(old1, new1)
+            ok1 = True
+            print("PATCH 1 OK: deklarasi variabel ditambah")
           else:
-              print("WARNING: konteks tidak ditemukan!")
-              sys.exit(1)
-          
+            print("WARNING: patch 1 konteks tidak ditemukan!")
+
+          if old2 in content:
+            content = content.replace(old2, new2)
+            ok2 = True
+            print("PATCH 2 OK: sus_path check ditambah")
+          else:
+            print("WARNING: patch 2 konteks tidak ditemukan!")
+
+          if not ok1 or not ok2:
+            sys.exit(1)
+
           with open('fs/open.c', 'w') as f:
-              f.write(content)
+            f.write(content)
           PYEOF
-                    python3 /tmp/patch_open.py    
+                python3 /tmp/patch_open.py    
            
       - name: Debug SUSFS in open.c
         if: always()
