@@ -80,28 +80,22 @@ jobs:
           static inline bool susfs_is_current_zygote_domain(void) { return false; }
           EOF
 
-      - name: Fix namespace.c include SUSFS
+      - name: Fix missing SUSFS symbols
         run: |
-          cat > /tmp/fix_namespace.py << 'PYEOF'
-          with open('kernel/fs/namespace.c', 'r') as f:
-              content = f.read()
+          cat >> kernel/fs/susfs.c << 'EOF'
+
+          bool susfs_is_current_ksu_domain(void)
+          {
+          	return uid_eq(current_uid(), GLOBAL_ROOT_UID);
+          }
           
-          if 'susfs.h' not in content:
-              old = '#include <linux/fs.h>'
-              new = '#include <linux/fs.h>\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif'
-              if old in content:
-                  content = content.replace(old, new, 1)
-                  print("OK: susfs.h ditambah ke namespace.c")
-              else:
-                  print("WARNING: include fs.h tidak ditemukan!")
-          else:
-              print("SKIP: susfs.h sudah ada")
-          
-          with open('kernel/fs/namespace.c', 'w') as f:
-              f.write(content)
-          PYEOF
-                    python3 /tmp/fix_namespace.py
-                    grep -n "susfs" kernel/fs/namespace.c | head -5
+          bool susfs_is_current_zygote_domain(void)
+          {
+          	return false;
+          }
+          EOF
+                    echo "=== Verifikasi ==="
+                    tail -15 kernel/fs/susfs.c
          
       - name: Debug susfs.h content
         if: always()
