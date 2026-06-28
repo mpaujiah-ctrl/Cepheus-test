@@ -175,7 +175,7 @@ jobs:
       
       - name: Manual patch fs/open.c for SUSFS
         run: |
-          cd fs
+          cd kernel/fs
           # tambahkan include SUSFS di bagian atas fs/open.c
           grep -q "susfs.h" open.c || \
             sed -i '1i #ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif' open.c
