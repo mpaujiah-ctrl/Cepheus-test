@@ -163,28 +163,17 @@ jobs:
 
           with open('fs/open.c', 'r') as f:
             content = f.read()
-          old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
 
-          new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
-         
-          # Patch 0: tambah include susfs.h
-          old0 = '#include <linux/fs.h>'
-          new0 = '#include <linux/fs.h>\n#include <linux/susfs.h>'
-          
-          if old0 in content:
-              content = content.replace(old0, new0, 1)
-              print("PATCH 0 OK: include susfs.h ditambah")
-          else:
-              print("WARNING: patch 0 tidak ditemukan!")
+          # Patch 0: Tambahkan include langsung di baris paling atas file
+          content = "#include <linux/susfs.h>\n" + content
+          print("PATCH 0 OK: include susfs.h disisipkan di baris pertama")
                     
           # Patch 1: tambah deklarasi variabel setelah lookup_flags
           old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
-
           new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
 
           # Patch 2: tambah sus_path check setelah KernelSU block
           old2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
-
           new2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tfname = getname_safe(filename);\n\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\tputname_safe(fname);\n\tif (status) {\n\t\treturn error;\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
 
           ok1 = ok2 = False
@@ -209,7 +198,7 @@ jobs:
           with open('fs/open.c', 'w') as f:
             f.write(content)
           PYEOF
-                python3 /tmp/patch_open.py    
+          python3 /tmp/patch_open.py   
            
       - name: Setup defconfig KSUN
         run: |
