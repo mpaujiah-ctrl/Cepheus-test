@@ -67,6 +67,15 @@ jobs:
           cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
+
+      - name: Debug Kconfig SUSFS
+        if: always()
+        run: |
+          cd kernel
+          echo "=== fs/Kconfig susfs ==="
+          grep -n "SUSFS\|susfs" fs/Kconfig | head -20
+          echo "=== fs/Makefile susfs ==="
+          grep -n "SUSFS\|susfs" fs/Makefile | head -20
          
       - name: Manual patch fs/open.c for SUSFS
         run: |
@@ -111,15 +120,6 @@ jobs:
           PYEOF
                 python3 /tmp/patch_open.py    
            
-      - name: Debug SUSFS in open.c
-        if: always()
-        run: |
-          cd kernel
-          echo "=== Semua susfs reference di open.c ==="
-          grep -n "susfs\|sus_path\|getname_safe\|putname_safe\|SUS_PATH" fs/open.c
-          echo "=== Isi open.c.rej lengkap ==="
-          cat fs/open.c.rej || echo "tidak ada rej"
-      
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
@@ -157,12 +157,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo 'CONFIG_LOCALVERSION="-TURTLE-SUSFS"' >> kernel/arch/arm64/configs/cepheus_defconfig
-      
-      - name: Debug defconfig
-        run: |
-          echo "=== CEK 6 CONFIG PENYAKIT ==="
-          grep -E "SCHED_BOOST|QCOM_PERF_BOOST|QTI_SCMI_PLAT|WALT|SCHED_DEBUG|MSM_GENI_IR" kernel/arch/arm64/configs/vendor/cepheus_defconfig || true
-      
+           
       - name: Patch WALT stub
         run: |
           cd kernel
@@ -237,18 +232,8 @@ jobs:
           
           with open('kernel/sysctl.c', 'w') as f:
               f.write(content)
-          PYEOF
-        
-      - name: Debug WALT functions called
-        run: |
-          cd kernel
-          echo "=== SEMUA FUNGSI WALT YANG DIPANGGIL ==="
-          grep -rh 'walt_\|inc_rq_walt\|dec_rq_walt' kernel/sched/ \
-            --include="*.c" \
-             | grep -v '//' \
-             | grep -oP '(?<!\w)(walt_\w+|inc_rq_walt\w*|dec_rq_walt\w*)(?=\s*\()' \
-             | sort -u
-          
+          PYEOF      
+      
       - name: Patch WALT stub
         run: |
           cd kernel
