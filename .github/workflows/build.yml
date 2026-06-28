@@ -156,60 +156,49 @@ jobs:
                     grep -c "KSU_SUSFS" fs/Kconfig                     
       
       - name: Manual patch fs/open.c for SUSFS
-        run: |         
-          cd kernel
-          cat > /tmp/patch_open.py << 'PYEOF'                  
+        run: |
+          cat > /tmp/patch_open.py << 'PYEOF'
           import sys
-
-          with open('fs/open.c', 'r') as f:
-            content = f.read()
-          old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
-
-          new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
-         
-          # Patch 0: tambah include susfs.h
+          
+          with open('kernel/fs/open.c', 'r') as f:
+              content = f.read()
+          
+          ok0 = ok1 = ok2 = False
+          
           old0 = '#include <linux/fs.h>'
           new0 = '#include <linux/fs.h>\n#include <linux/susfs.h>'
-          
           if old0 in content:
               content = content.replace(old0, new0, 1)
-              print("PATCH 0 OK: include susfs.h ditambah")
+              ok0 = True
+              print("PATCH 0 OK")
           else:
-              print("WARNING: patch 0 tidak ditemukan!")
-                    
-          # Patch 1: tambah deklarasi variabel setelah lookup_flags
+              print("WARNING patch 0 tidak ditemukan!")
+          
           old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
-
           new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
-
-          # Patch 2: tambah sus_path check setelah KernelSU block
-          old2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
-
-          new2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tfname = getname_safe(filename);\n\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\tputname_safe(fname);\n\tif (status) {\n\t\treturn error;\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
-
-          ok1 = ok2 = False
-
           if old1 in content:
-            content = content.replace(old1, new1)
-            ok1 = True
-            print("PATCH 1 OK: deklarasi variabel ditambah")
+              content = content.replace(old1, new1)
+              ok1 = True
+              print("PATCH 1 OK")
           else:
-            print("WARNING: patch 1 konteks tidak ditemukan!")
-
+              print("WARNING patch 1 tidak ditemukan!")
+          
+          old2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
+          new2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tfname = getname_safe(filename);\n\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\tputname_safe(fname);\n\tif (status) {\n\t\treturn error;\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
           if old2 in content:
-            content = content.replace(old2, new2)
-            ok2 = True
-            print("PATCH 2 OK: sus_path check ditambah")
+              content = content.replace(old2, new2)
+              ok2 = True
+              print("PATCH 2 OK")
           else:
-            print("WARNING: patch 2 konteks tidak ditemukan!")
-
-          if not ok1 or not ok2:
-            sys.exit(1)
-
-          with open('fs/open.c', 'w') as f:
-            f.write(content)
+              print("WARNING patch 2 tidak ditemukan!")
+          
+          if not ok0 or not ok1 or not ok2:
+              sys.exit(1)
+          
+          with open('kernel/fs/open.c', 'w') as f:
+              f.write(content)
           PYEOF
-                python3 /tmp/patch_open.py   
+                    python3 /tmp/patch_open.py   
            
       - name: Setup defconfig KSUN
         run: |
