@@ -82,10 +82,26 @@ jobs:
 
       - name: Fix namespace.c include SUSFS
         run: |
-          grep -q "susfs.h" kernel/fs/namespace.c || \
-          sed -i '/#include <linux\/fs.h>/a #ifdef CONFIG_KSU_SUSFS\n#include <linux\/susfs.h>\n#endif' kernel/fs/namespace.c
-          echo "=== Verifikasi ==="
-          grep -n "susfs" kernel/fs/namespace.c | head -5
+          cat > /tmp/fix_namespace.py << 'PYEOF'
+          with open('kernel/fs/namespace.c', 'r') as f:
+              content = f.read()
+          
+          if 'susfs.h' not in content:
+              old = '#include <linux/fs.h>'
+              new = '#include <linux/fs.h>\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif'
+              if old in content:
+                  content = content.replace(old, new, 1)
+                  print("OK: susfs.h ditambah ke namespace.c")
+              else:
+                  print("WARNING: include fs.h tidak ditemukan!")
+          else:
+              print("SKIP: susfs.h sudah ada")
+          
+          with open('kernel/fs/namespace.c', 'w') as f:
+              f.write(content)
+          PYEOF
+                    python3 /tmp/fix_namespace.py
+                    grep -n "susfs" kernel/fs/namespace.c | head -5
          
       - name: Debug susfs.h content
         if: always()
