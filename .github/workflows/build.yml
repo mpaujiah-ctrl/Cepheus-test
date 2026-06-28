@@ -71,7 +71,14 @@ jobs:
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
           echo "=== Verifikasi ==="
           ls -la include/linux/susfs.h
-          ls -la fs/susfs.c          
+          ls -la fs/susfs.c        
+
+          grep -q "susfs_is_current_ksu_domain" include/linux/susfs.h || \
+          cat >> include/linux/susfs.h << 'EOF'
+
+          static inline bool susfs_is_current_ksu_domain(void) { return false; }
+          static inline bool susfs_is_current_zygote_domain(void) { return false; }
+          EOF
          
       - name: Debug susfs.h content
         if: always()
