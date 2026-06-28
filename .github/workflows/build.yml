@@ -71,7 +71,12 @@ jobs:
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
           echo "=== Verifikasi ==="
           ls -la include/linux/susfs.h
-          ls -la fs/susfs.c                  
+          ls -la fs/susfs.c          
+
+          echo "=== Cek susfs_def.h ==="
+          ls -la include/linux/susfs_def.h || echo "FILE TIDAK ADA!"
+          echo "=== Isi susfs_def.h ==="
+          cat include/linux/susfs_def.h | head -30
 
       - name: Debug susfs.h content
         if: always()
