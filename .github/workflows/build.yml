@@ -79,6 +79,18 @@ jobs:
           static inline bool susfs_is_current_ksu_domain(void) { return false; }
           static inline bool susfs_is_current_zygote_domain(void) { return false; }
           EOF
+
+      - name: Fix missing SUSFS symbols
+        run: |
+          cat >> kernel/fs/susfs.c << 'EOF'
+
+          #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+          bool susfs_is_current_ksu_domain(void) { return false; }
+          bool susfs_is_current_zygote_domain(void) { return false; }
+          #endif
+          EOF
+                    echo "=== Verifikasi ==="
+                    tail -10 kernel/fs/susfs.c
          
       - name: Debug susfs.h content
         if: always()
