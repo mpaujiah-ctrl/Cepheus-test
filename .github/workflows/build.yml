@@ -105,7 +105,7 @@ jobs:
           config KSU_SUSFS_SUS_KSTAT
           	bool "Enable sus kstat"
           	depends on KSU_SUSFS
-          	default y
+          	default n
           
           config KSU_SUSFS_SUS_OVERLAYFS
           	bool "Enable sus overlayfs"
