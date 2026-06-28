@@ -164,19 +164,30 @@ jobs:
           with open('fs/open.c', 'r') as f:
             content = f.read()
 
-          # Patch 0: Tambahkan include langsung di baris paling atas file
-          content = "#include <linux/susfs.h>\n" + content
-          print("PATCH 0 OK: include susfs.h disisipkan di baris pertama")
-                    
-          # Patch 1: tambah deklarasi variabel setelah lookup_flags
+          # Urutan penempatan patch 1 & 2
           old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
           new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
 
-          # Patch 2: tambah sus_path check setelah KernelSU block
           old2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
           new2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tfname = getname_safe(filename);\n\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\tputname_safe(fname);\n\tif (status) {\n\t\treturn error;\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
 
-          ok1 = ok2 = False
+          ok0 = ok1 = ok2 = False
+
+          # Patch 0: Sisipkan include susfs.h setelah include bawaan kernel (misalnya setelah internal.h)
+          if '#include "internal.h"' in content:
+            content = content.replace('#include "internal.h"', '#include "internal.h"\n#include <linux/susfs.h>')
+            ok0 = True
+            print("PATCH 0 OK: susfs.h ditempatkan setelah internal.h")
+          elif '#include <linux/slab.h>' in content:
+            content = content.replace('#include <linux/slab.h>', '#include <linux/slab.h>\n#include <linux/susfs.h>')
+            ok0 = True
+            print("PATCH 0 OK: susfs.h ditempatkan setelah slab.h")
+          else:
+            # Fallback jika kedua patokan di atas tidak ada, ditaruh di atas block pertama KernelSU
+            if old1 in content:
+              content = content.replace(old1, '#include <linux/susfs.h>\n\n' + old1)
+              ok0 = True
+              print("PATCH 0 FALLBACK OK: susfs.h ditempatkan tepat di atas fungsi")
 
           if old1 in content:
             content = content.replace(old1, new1)
@@ -192,7 +203,8 @@ jobs:
           else:
             print("WARNING: patch 2 konteks tidak ditemukan!")
 
-          if not ok1 or not ok2:
+          if not ok0 or not ok1 or not ok2:
+            print(f"Status kegagalan Patch -> P0: {ok0}, P1: {ok1}, P2: {ok2}")
             sys.exit(1)
 
           with open('fs/open.c', 'w') as f:
