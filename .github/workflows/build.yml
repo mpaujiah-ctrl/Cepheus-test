@@ -378,12 +378,20 @@ jobs:
       
       - name: Add SUSFS stubs
         run: |
+          # Deklarasi fungsi di header
+          echo 'bool susfs_is_current_ksu_domain(void);' >> kernel/include/linux/susfs.h
+          echo 'bool susfs_is_current_zygote_domain(void);' >> kernel/include/linux/susfs.h
+      
+          # Implementasi stub di fs/
           cat > kernel/fs/susfs_stub.c << 'EOF'
           #include <linux/susfs.h>
       
           bool susfs_is_current_ksu_domain(void) { return false; }
           bool susfs_is_current_zygote_domain(void) { return false; }
           EOF
+      
+          # Tambahkan ke Makefile
+          sed -i '/obj-y/s/$/ susfs_stub.o/' kernel/fs/Makefile
       
       - name: Build kernel
         run: |
