@@ -68,15 +68,81 @@ jobs:
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
       
-      - name: Debug Kconfig SUSFS
-        if: always()
+      - name: Add SUSFS to Kconfig
         run: |
           cd kernel
-          echo "=== fs/Kconfig susfs ==="
-          grep -n "SUSFS\|susfs" fs/Kconfig | head -20
-          echo "=== fs/Makefile susfs ==="
-          grep -n "SUSFS\|susfs" fs/Makefile | head -20
-         
+          cat >> fs/Kconfig << 'EOF'
+
+          config KSU_SUSFS
+          	bool "KernelSU addon - susfs"
+          	depends on KSU
+          	default y
+          	help
+          	  Enable susfs support for KernelSU.
+          
+          config KSU_SUSFS_SUS_PATH
+          	bool "Enable sus path"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_SUS_MOUNT
+          	bool "Enable sus mount"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_SUS_KSTAT
+          	bool "Enable sus kstat"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_SUS_OVERLAYFS
+          	bool "Enable sus overlayfs"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_TRY_UMOUNT
+          	bool "Enable try umount"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_SPOOFER
+          	bool "Enable spoofer"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_ENABLE_LOG
+          	bool "Enable log"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_OPEN_REDIRECT
+          	bool "Enable open redirect"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+          	bool "Enable auto add sus bind mount"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND
+          	bool "Enable auto add try umount for bind"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+          	bool "Hide KSU SUSFS symbols"
+          	depends on KSU_SUSFS
+          	default y
+          
+          config KSU_SUSFS_SPOOF_BOOTCONFIG
+          	bool "Spoof bootconfig"
+          	depends on KSU_SUSFS
+          	default y
+          EOF
+                    echo "Kconfig SUSFS ditambah"
+                    grep -c "KSU_SUSFS" fs/Kconfig 
+                    
       - name: Manual patch fs/open.c for SUSFS
         run: |
           cd kernel
