@@ -161,11 +161,9 @@ jobs:
       - name: Patch WALT stub
         run: |
           cd kernel
-      
-          # Hapus implementasi walt.c
           rm -f kernel/sched/walt.c
+          rm -f kernel/sched/walt.h
       
-          # Buat header stub walt.h
           printf '%s\n' \
           '#ifndef _KERNEL_SCHED_WALT_H' \
           '#define _KERNEL_SCHED_WALT_H' \
@@ -200,12 +198,13 @@ jobs:
           'static inline int walt_big_tasks(int cpu) { return 0; }' \
           '#endif' \
           > kernel/sched/walt.h
-      
-          # Patch sysctl.c: bungkus entry sched_upmigrate & sched_downmigrate
+
+          # Patch sysctl.c: hapus entry sched_upmigrate dan sched_downmigrate
           python3 << 'PYEOF'
           with open('kernel/sysctl.c', 'r') as f:
-          content = f.read()
-      
+              content = f.read()
+          
+          # Bungkus 2 entry dengan ifdef
           old = '''\t{
           \t\t.procname\t= "sched_upmigrate",
           \t\t.data\t\t= &sysctl_sched_capacity_margin_up,
@@ -234,19 +233,36 @@ jobs:
           with open('kernel/sysctl.c', 'w') as f:
               f.write(content)
           PYEOF
+        
+      - name: Debug WALT functions called
+        run: |
+          cd kernel
+          echo "=== SEMUA FUNGSI WALT YANG DIPANGGIL ==="
+          grep -rh 'walt_\|inc_rq_walt\|dec_rq_walt' kernel/sched/ \
+            --include="*.c" \
+             | grep -v '//' \
+             | grep -oP '(?<!\w)(walt_\w+|inc_rq_walt\w*|dec_rq_walt\w*)(?=\s*\()' \
+             | sort -u
           
-              # Patch rt.c: bungkus call WALT
-              sed -i 's/\twalt_inc_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
-              sed -i 's/\twalt_dec_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
-          
-              # Patch deadline.c: bungkus call WALT
-              sed -i 's/\twalt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));\n#endif/' kernel/sched/deadline.c
-              sed -i 's/\twalt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));\n#endif/' kernel/sched/deadline.c
-          
-              echo "=== Verifikasi patch rt.c ==="
-              grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/rt.c | head -20
-              echo "=== Verifikasi patch deadline.c ==="
-              grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
+      - name: Patch WALT stub
+        run: |
+          cd kernel
+      
+          # Hapus implementasi walt.c
+          rm -f kernel/sched/walt.c
+      
+          # Patch rt.c: bungkus 2 call walt yang tidak punya guard
+          sed -i 's/\twalt_inc_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
+          sed -i 's/\twalt_dec_cumulative_runnable_avg(rq, p);/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq, p);\n#endif/' kernel/sched/rt.c
+      
+          # Patch deadline.c: bungkus 2 call walt yang tidak punya guard
+          sed -i 's/\twalt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));/#ifdef CONFIG_SCHED_WALT\n\twalt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));\n#endif/' kernel/sched/deadline.c
+          sed -i 's/\twalt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));/#ifdef CONFIG_SCHED_WALT\n\twalt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));\n#endif/' kernel/sched/deadline.c
+      
+          echo "=== Verifikasi patch rt.c ==="
+          grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/rt.c | head -20
+          echo "=== Verifikasi patch deadline.c ==="
+          grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
            
       - name: Build kernel
         run: |
