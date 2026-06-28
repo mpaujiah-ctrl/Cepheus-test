@@ -393,11 +393,37 @@ jobs:
           # Tambahkan ke Makefile
           echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
       
-      - name: Debug susfs init
-        if: always()
+      - name: Fix susfs_init call
         run: |
-          grep -n "susfs_init\|proc_create\|late_initcall\|module_init" kernel/fs/susfs.c | head -20
-          grep -n "susfs_init" kernel/fs/namespace.c kernel/drivers/kernelsu/core_hook.c 2>/dev/null | head -20
+          cat > /tmp/fix_susfs_init.py << 'PYEOF'
+          with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
+          content = f.read()
+
+          # Tambah include susfs.h
+          if 'susfs.h' not in content:
+            old = '#include <linux/fs.h>'
+            new = '#include <linux/fs.h>\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif'
+          content = content.replace(old, new, 1)
+          print("OK: include susfs.h ditambah ke core_hook.c")
+
+          # Tambah susfs_init() call di ksu_init
+          old = 'void ksu_core_init(void)'
+          new = 'void ksu_core_init(void)'
+          if old in content:
+          # Cari baris pertama dalam fungsi ksu_core_init
+          content = content.replace(
+          'void ksu_core_init(void)\n{',
+          'void ksu_core_init(void)\n{\n#ifdef CONFIG_KSU_SUSFS\n\tsusfs_init();\n#endif'
+          )
+          print("OK: susfs_init() ditambah ke ksu_core_init")
+          else:
+          print("WARNING: ksu_core_init tidak ditemukan!")
+
+          with open('kernel/drivers/kernelsu/core_hook.c', 'w') as f:
+          f.write(content)
+          PYEOF
+          python3 /tmp/fix_susfs_init.py
+          grep -n "susfs_init\|susfs.h" kernel/drivers/kernelsu/core_hook.c | head -10
       
       - name: Build kernel
         run: |
