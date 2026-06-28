@@ -169,9 +169,8 @@ jobs:
                     echo "Kconfig SUSFS ditambah"
                     grep -c "KSU_SUSFS" fs/Kconfig 
                     
-      - name: Debug kernel tree
-        run: |
-          find . -name "open.c"
+      - name: Debug open.c path
+        run: ls -l kernel/fs/open.c
       
       - name: Manual patch fs/open.c for SUSFS
         run: |
