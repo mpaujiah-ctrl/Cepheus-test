@@ -59,6 +59,7 @@ jobs:
         run: |
           cd kernel
           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
+          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
               
           # Copy SUSFS source files ke kernel
           cp ../susfs/kernel_patches/fs/susfs.c fs/
@@ -66,9 +67,7 @@ jobs:
           cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
-          
-          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
-      
+         
       - name: Manual patch fs/open.c for SUSFS
         run: |
           cd kernel
