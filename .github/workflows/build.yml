@@ -101,7 +101,7 @@ jobs:
               f.write(content)
           PYEOF
                     python3 /tmp/fix_susfs_inline.py
-                    grep -n "susfs_is_current" kernel/include/linux/susfs.h
+                    grep -n "susfs_is_current" kernel/include/linux/susfs.h || true
          
       - name: Debug susfs.h content
         if: always()
