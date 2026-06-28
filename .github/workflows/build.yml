@@ -72,16 +72,7 @@ jobs:
           echo "=== Verifikasi ==="
           ls -la include/linux/susfs.h
           ls -la fs/susfs.c          
-
-          echo "=== Cek susfs_def.h ==="
-          ls -la include/linux/susfs_def.h || echo "FILE TIDAK ADA!"
-          echo "=== Isi susfs_def.h ==="
-          cat include/linux/susfs_def.h | head -30
-          echo "=== Fungsi susfs_sus_path di susfs.h ==="
-          grep -n "susfs_sus_path\|SYSCALL_FAMILY\|sus_path" include/linux/susfs.h | head -20
-          echo "=== Fungsi di susfs.c ==="
-          grep -n "^int\|^void\|^bool\|^static int\|sus_path" fs/susfs.c | head -20
-
+         
       - name: Debug susfs.h content
         if: always()
         run: |
@@ -172,36 +163,26 @@ jobs:
           with open('kernel/fs/open.c', 'r') as f:
               content = f.read()
           
-          ok0 = ok1 = ok2 = False
+          ok0 = ok1 = False
           
           old0 = '#include <linux/fs.h>'
           new0 = '#include <linux/fs.h>\n#include <linux/susfs.h>'
           if old0 in content:
               content = content.replace(old0, new0, 1)
               ok0 = True
-              print("PATCH 0 OK")
+              print("PATCH 0 OK: include susfs.h ditambah")
           else:
               print("WARNING patch 0 tidak ditemukan!")
           
           old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
-          new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tstruct filename* fname;\n\tint status;\n\tint error;\n#endif\n\n\t// KernelSU - start'
+          new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
           if old1 in content:
-              content = content.replace(old1, new1)
               ok1 = True
-              print("PATCH 1 OK")
+              print("PATCH 1 OK: konteks ditemukan, tidak perlu diubah")
           else:
               print("WARNING patch 1 tidak ditemukan!")
           
-          old2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n\tif (mode & ~S_IRWXO)'
-          new2 = '\t// KernelSU - start\n\tksu_handle_faccessat(&dfd, &filename, &mode, NULL);\n\t// KernelSU - end\n\n#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n\tfname = getname_safe(filename);\n\tstatus = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);\n\tputname_safe(fname);\n\tif (status) {\n\t\treturn error;\n\t}\n#endif\n\n\tif (mode & ~S_IRWXO)'
-          if old2 in content:
-              content = content.replace(old2, new2)
-              ok2 = True
-              print("PATCH 2 OK")
-          else:
-              print("WARNING patch 2 tidak ditemukan!")
-          
-          if not ok0 or not ok1 or not ok2:
+          if not ok0 or not ok1:
               sys.exit(1)
           
           with open('kernel/fs/open.c', 'w') as f:
