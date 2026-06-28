@@ -171,8 +171,7 @@ jobs:
                     
       - name: Debug kernel tree
         run: |
-          pwd
-          ls -R | grep open.c
+          find . -name "open.c"
       
       - name: Manual patch fs/open.c for SUSFS
         run: |
