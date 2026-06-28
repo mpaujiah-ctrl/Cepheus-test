@@ -80,6 +80,13 @@ jobs:
           # stub minimal implementasi fungsi biar compile jalan
           echo 'int susfs_sus_path_by_filename(const char *fname, int *error, int family) { return 0; }' >> fs/susfs.c
 
+          # revisi tambahan: pastikan deklarasi & konstanta ada
+          grep -q "susfs_sus_path_by_filename" include/linux/susfs.h || \
+            echo 'int susfs_sus_path_by_filename(const char *fname, int *error, int family);' >> include/linux/susfs.h
+      
+          grep -q "SYSCALL_FAMILY_ALL_ENOENT" include/linux/sus_def.h || \
+            echo '#define SYSCALL_FAMILY_ALL_ENOENT 1' >> include/linux/sus_def.h
+
       - name: Debug susfs.h content
         if: always()
         run: |
