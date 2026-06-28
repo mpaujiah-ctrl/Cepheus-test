@@ -393,6 +393,12 @@ jobs:
           # Tambahkan ke Makefile
           echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
       
+      - name: Debug susfs init
+        if: always()
+        run: |
+          grep -n "susfs_init\|proc_create\|late_initcall\|module_init" kernel/fs/susfs.c | head -20
+          grep -n "susfs_init" kernel/fs/namespace.c kernel/drivers/kernelsu/core_hook.c 2>/dev/null | head -20
+      
       - name: Build kernel
         run: |
           cd kernel
