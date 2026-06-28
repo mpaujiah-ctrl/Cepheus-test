@@ -183,7 +183,7 @@ jobs:
           config KSU_SUSFS_SPOOF_BOOTCONFIG
           	bool "Spoof bootconfig"
           	depends on KSU_SUSFS
-          	default y
+          	default y  
           EOF
                     echo "Kconfig SUSFS ditambah"
                     grep -c "KSU_SUSFS" fs/Kconfig                     
@@ -259,6 +259,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND=n" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_DEVMEM=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo 'CONFIG_LOCALVERSION="-TURTLE-SUSFS"' >> kernel/arch/arm64/configs/cepheus_defconfig
            
       - name: Patch WALT stub
