@@ -376,6 +376,15 @@ jobs:
           grep -q "INODE_STATE_SUS_KSTAT" susfs_def.h || \
             echo "#define INODE_STATE_SUS_KSTAT 2" >> susfs_def.h
       
+      - name: Add SUSFS stubs
+        run: |
+          cat > kernel/fs/susfs_stub.c << 'EOF'
+          #include <linux/susfs.h>
+      
+          bool susfs_is_current_ksu_domain(void) { return false; }
+          bool susfs_is_current_zygote_domain(void) { return false; }
+          EOF
+      
       - name: Build kernel
         run: |
           cd kernel
