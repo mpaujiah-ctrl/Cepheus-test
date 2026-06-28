@@ -82,20 +82,26 @@ jobs:
 
       - name: Fix missing SUSFS symbols
         run: |
-          cat >> kernel/fs/susfs.c << 'EOF'
-
-          bool susfs_is_current_ksu_domain(void)
-          {
-          	return uid_eq(current_uid(), GLOBAL_ROOT_UID);
-          }
+          cat > /tmp/fix_susfs_inline.py << 'PYEOF'
+          with open('kernel/include/linux/susfs.h', 'r') as f:
+              content = f.read()
           
-          bool susfs_is_current_zygote_domain(void)
-          {
-          	return false;
-          }
-          EOF
-                    echo "=== Verifikasi ==="
-                    tail -15 kernel/fs/susfs.c
+          # Hapus static inline definitions yang konflik
+          content = content.replace(
+              'static inline bool susfs_is_current_ksu_domain(void) { return false; }',
+              ''
+          )
+          content = content.replace(
+              'static inline bool susfs_is_current_zygote_domain(void) { return false; }',
+              ''
+          )
+          print("OK: static inline dihapus dari susfs.h")
+          
+          with open('kernel/include/linux/susfs.h', 'w') as f:
+              f.write(content)
+          PYEOF
+                    python3 /tmp/fix_susfs_inline.py
+                    grep -n "susfs_is_current" kernel/include/linux/susfs.h
          
       - name: Debug susfs.h content
         if: always()
