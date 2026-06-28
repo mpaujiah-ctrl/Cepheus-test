@@ -215,7 +215,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=n" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOFER=y" >> kernel/arch/arm64/configs/cepheus_defconfig
