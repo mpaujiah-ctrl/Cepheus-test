@@ -71,21 +71,7 @@ jobs:
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
           echo "=== Verifikasi ==="
           ls -la include/linux/susfs.h
-          ls -la fs/susfs.c
-
-          # tambahan revisi: cek isi header supaya deklarasi & konstanta ada
-          echo 'int susfs_sus_path_by_filename(const char *fname, int *error, int family);' >> include/linux/susfs.h
-          echo '#define SYSCALL_FAMILY_ALL_ENOENT 1' >> include/linux/sus_def.h
-        
-          # stub minimal implementasi fungsi biar compile jalan
-          echo 'int susfs_sus_path_by_filename(const char *fname, int *error, int family) { return 0; }' >> fs/susfs.c
-
-          # revisi tambahan: pastikan deklarasi & konstanta ada
-          grep -q "susfs_sus_path_by_filename" include/linux/susfs.h || \
-            echo 'int susfs_sus_path_by_filename(const char *fname, int *error, int family);' >> include/linux/susfs.h
-      
-          grep -q "SYSCALL_FAMILY_ALL_ENOENT" include/linux/sus_def.h || \
-            echo '#define SYSCALL_FAMILY_ALL_ENOENT 1' >> include/linux/sus_def.h          
+          ls -la fs/susfs.c                  
 
       - name: Debug susfs.h content
         if: always()
@@ -167,18 +153,10 @@ jobs:
           	default y
           EOF
                     echo "Kconfig SUSFS ditambah"
-                    grep -c "KSU_SUSFS" fs/Kconfig 
-                    
-      - name: Debug open.c path
-        run: ls -l kernel/fs/open.c
+                    grep -c "KSU_SUSFS" fs/Kconfig                     
       
       - name: Manual patch fs/open.c for SUSFS
-        run: |
-          cd kernel/fs
-          # tambahkan include SUSFS di bagian atas fs/open.c
-          grep -q "susfs.h" open.c || \
-            sed -i '1i #ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif' open.c
-          
+        run: |         
           cd kernel
           cat > /tmp/patch_open.py << 'PYEOF'                  
           import sys
