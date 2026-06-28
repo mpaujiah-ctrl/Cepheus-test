@@ -87,6 +87,7 @@ jobs:
           grep -q "SYSCALL_FAMILY_ALL_ENOENT" include/linux/sus_def.h || \
             echo '#define SYSCALL_FAMILY_ALL_ENOENT 1' >> include/linux/sus_def.h
 
+          cd $KERNEL_ROOT/fs
           # tambahkan include SUSFS di bagian atas fs/open.c
           grep -q "susfs.h" open.c || \
             sed -i '1i #ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif' open.c  
