@@ -85,12 +85,7 @@ jobs:
             echo 'int susfs_sus_path_by_filename(const char *fname, int *error, int family);' >> include/linux/susfs.h
       
           grep -q "SYSCALL_FAMILY_ALL_ENOENT" include/linux/sus_def.h || \
-            echo '#define SYSCALL_FAMILY_ALL_ENOENT 1' >> include/linux/sus_def.h
-
-          cd $KERNEL_ROOT/fs
-          # tambahkan include SUSFS di bagian atas fs/open.c
-          grep -q "susfs.h" open.c || \
-            sed -i '1i #ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif' open.c  
+            echo '#define SYSCALL_FAMILY_ALL_ENOENT 1' >> include/linux/sus_def.h          
 
       - name: Debug susfs.h content
         if: always()
@@ -178,6 +173,15 @@ jobs:
         run: |
           cd kernel
           cat > /tmp/patch_open.py << 'PYEOF'
+          import os
+
+          path = os.path.join(os.environ["KERNEL_ROOT"], "fs", "open.c")
+          with open(path, "r+") as f:
+              content = f.read()
+              if "susfs.h" not in content:
+                  f.seek(0, 0)
+                  f.write("#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif\n" + content)
+          
           import sys
 
           with open('fs/open.c', 'r') as f:
