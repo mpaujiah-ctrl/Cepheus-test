@@ -60,12 +60,18 @@ jobs:
           cd kernel
           cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
           patch -p1 < 50_add_susfs_in_kernel-4.14.patch
-          
+
+      - name: Copy SUSFS Files
+        run: |
+          cd kernel
           cp ../susfs/kernel_patches/fs/susfs.c fs/
           cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
           cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
+          echo "=== Verifikasi ==="
+          ls -la include/linux/susfs.h
+          ls -la fs/susfs.c
       
       - name: Add SUSFS to Kconfig
         run: |
