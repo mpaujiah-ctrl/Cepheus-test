@@ -19,3 +19,18 @@ print("OK: susfs_init ditambah ke ksu_core_init")
 
 with open('kernel/drivers/kernelsu/core_hook.c', 'w') as f:
     f.write(content)
+
+import sys
+
+with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
+    content = f.read()
+
+# Debug - cari semua fungsi void
+import re
+funcs = re.findall(r'void \w+\(void\)', content)
+print("Fungsi void di core_hook.c:", funcs[:10])
+
+if 'susfs_init' in content:
+    print("susfs_init SUDAH ADA")
+else:
+    print("susfs_init BELUM ADA")
