@@ -178,7 +178,7 @@ jobs:
           config KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
           	bool "Hide KSU SUSFS symbols"
           	depends on KSU_SUSFS
-          	default y
+          	default n
           
           config KSU_SUSFS_SPOOF_BOOTCONFIG
           	bool "Spoof bootconfig"
@@ -257,7 +257,6 @@ jobs:
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND=n" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo 'CONFIG_LOCALVERSION="-TURTLE-SUSFS"' >> kernel/arch/arm64/configs/cepheus_defconfig
            
