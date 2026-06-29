@@ -396,26 +396,35 @@ jobs:
           # Tambahkan ke Makefile
           echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
       
-      - name: Add ksu_core_init manually
+      - name: Inject susfs_init into ksu_core_init
         run: |
-          cat >> kernel/drivers/kernelsu/core_hook.c << 'EOF'
+          cat > /tmp/inject_susfs_init.py << 'PYEOF'
+          import re
 
-          #include <linux/susfs.h>
+          path = "kernel/drivers/kernelsu/core_hook.c"
+          with open(path, "r") as f:
+              lines = f.readlines()
 
-          void ksu_core_init(void)
-          {
-          #ifdef CONFIG_KSU_SUSFS
-              susfs_init();
-          #endif
-              // kode init lain bisa ditambah di sini
-          }
-          EOF
-          echo "Fungsi ksu_core_init ditambahkan ke core_hook.c"
+          out = []
+          inside_core_init = False
+          inserted = False
 
-      - name: Fix susfs_init call
-        run: |
-          python3 .github/scripts/fix_susfs_init.py
-          grep -n "susfs_init\|susfs.h" kernel/drivers/kernelsu/core_hook.c | head -10
+          for line in lines:
+              if re.match(r"\s*void\s+__init\s+ksu_core_init\s*\(", line):
+                  inside_core_init = True
+              if inside_core_init and re.match(r"\s*}\s*", line) and not inserted:
+                  out.append("    susfs_init();\n")
+                  inserted = True
+                  inside_core_init = False
+              out.append(line)
+
+          with open(path, "w") as f:
+              f.writelines(out)
+
+          print("✅ susfs_init injected into existing ksu_core_init")
+          PYEOF
+          python3 /tmp/inject_susfs_init.py
+          grep -n "susfs_init" kernel/drivers/kernelsu/core_hook.c | head -10
      
       - name: Build kernel
         run: |
