@@ -396,6 +396,22 @@ jobs:
           # Tambahkan ke Makefile
           echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
       
+      - name: Add ksu_core_init manually
+        run: |
+          cat >> kernel/drivers/kernelsu/core_hook.c << 'EOF'
+
+          #include <linux/susfs.h>
+
+          void ksu_core_init(void)
+          {
+          #ifdef CONFIG_KSU_SUSFS
+              susfs_init();
+          #endif
+              // kode init lain bisa ditambah di sini
+          }
+          EOF
+          echo "Fungsi ksu_core_init ditambahkan ke core_hook.c"
+
       - name: Fix susfs_init call
         run: |
           python3 .github/scripts/fix_susfs_init.py
