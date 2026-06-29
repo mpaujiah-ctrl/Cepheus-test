@@ -1,8 +1,10 @@
-import sys
+import re
 
-with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
+path = 'kernel/drivers/kernelsu/core_hook.c'
+with open(path, 'r') as f:
     content = f.read()
 
+# Tambah include kalau belum ada
 if 'susfs.h' not in content:
     content = content.replace(
         '#include <linux/fs.h>',
@@ -11,26 +13,15 @@ if 'susfs.h' not in content:
     )
     print("OK: include susfs.h ditambah")
 
-content = content.replace(
-    'void ksu_core_init(void)\n{',
-    'void ksu_core_init(void)\n{\n#ifdef CONFIG_KSU_SUSFS\n\tsusfs_init();\n#endif'
-)
-print("OK: susfs_init ditambah ke ksu_core_init")
+# Cari fungsi ksu_core_init dengan regex
+pattern = r'(void\s+ksu_core_init\s*\(\s*void\s*\)\s*\{)'
+replacement = r'\1\n#ifdef CONFIG_KSU_SUSFS\n    susfs_init();\n#endif'
 
-with open('kernel/drivers/kernelsu/core_hook.c', 'w') as f:
-    f.write(content)
-
-import sys
-
-with open('kernel/drivers/kernelsu/core_hook.c', 'r') as f:
-    content = f.read()
-
-# Debug - cari semua fungsi void
-import re
-funcs = re.findall(r'void \w+\(void\)', content)
-print("Fungsi void di core_hook.c:", funcs[:10])
-
-if 'susfs_init' in content:
-    print("susfs_init SUDAH ADA")
+new_content, count = re.subn(pattern, replacement, content)
+if count > 0:
+    print("OK: susfs_init ditambah ke ksu_core_init")
 else:
-    print("susfs_init BELUM ADA")
+    print("GAGAL: fungsi ksu_core_init tidak ditemukan")
+
+with open(path, 'w') as f:
+    f.write(new_content)
