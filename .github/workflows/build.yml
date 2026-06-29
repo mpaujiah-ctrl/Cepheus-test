@@ -395,7 +395,7 @@ jobs:
       
           # Tambahkan ke Makefile
           echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
-      
+
       - name: Inject susfs_init into ksu_core_init
         run: |
           cat > /tmp/inject_susfs_init.py << 'PYEOF'
@@ -425,7 +425,13 @@ jobs:
           PYEOF
           python3 /tmp/inject_susfs_init.py
           grep -n "susfs_init" kernel/drivers/kernelsu/core_hook.c | head -10
-     
+
+      
+      - name: Fix susfs_init call
+        run: |
+          python3 .github/scripts/fix_susfs_init.py
+          grep -n "susfs_init\|susfs.h" kernel/drivers/kernelsu/core_hook.c | head -10          
+      
       - name: Build kernel
         run: |
           cd kernel
