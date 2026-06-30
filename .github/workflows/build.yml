@@ -50,10 +50,13 @@ jobs:
       - name: Patch KernelSU Next (v3.2.0-legacy + susfs v2, dari fork rifsxd)
         run: |
           cd kernel
-          git clone https://github.com/rifsxd/KernelSU-Next.git ksun_src
-          cd ksun_src
-          git checkout 00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071
-          cd ..
+          curl -sL "https://github.com/rifsxd/KernelSU-Next/archive/00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071.tar.gz" -o ksun.tar.gz
+          mkdir -p ksun_src
+          tar -xzf ksun.tar.gz -C ksun_src --strip-components=1
+          rm ksun.tar.gz
+
+          echo "=== Verifikasi extract ==="
+          ls ksun_src/kernel/
 
           # Symlink manual (replikasi setup.sh, tapi arahin ke fork rifsxd)
           ln -sf "$(realpath --relative-to=drivers/staging ksun_src/kernel)" drivers/staging/kernelsu
