@@ -26,9 +26,13 @@ jobs:
       - name: Clone AnyKernel3
         run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
 
-      - name: Clone SUSFS
+      - name: Clone SUSFS (v2.1.0, source langsung dari raystef66 kernel tree)
         run: |
-          git clone --depth=1 --branch kernel-4.14 https://gitlab.com/simonpunk/susfs4ksu.git susfs
+          mkdir -p susfs/kernel_patches/fs susfs/kernel_patches/include/linux
+          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/susfs.c" -o susfs/kernel_patches/fs/susfs.c
+          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/include/linux/susfs.h" -o susfs/kernel_patches/include/linux/susfs.h
+          echo "=== Verifikasi versi ==="
+          grep "SUSFS_VERSION" susfs/kernel_patches/include/linux/susfs.h
 
       - name: Configure AnyKernel3
         run: |
@@ -43,186 +47,38 @@ jobs:
           echo "=== Cek anykernel.sh ==="
           grep -E "devicecheck|block=" anykernel.sh | head -10          
 
-      - name: Patch KernelSU Next
+      - name: Patch KernelSU Next (v3.2.0-legacy + susfs v2, dari fork rifsxd)
         run: |
           cd kernel
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v1.0.5
-          
-          rm -rf drivers/staging/kernelsu
-          sed -i '/kernelsu/d' drivers/staging/Kconfig
-          sed -i '/kernelsu/d' drivers/staging/Makefile
+          git clone https://github.com/rifsxd/KernelSU-Next.git ksun_src
+          cd ksun_src
+          git checkout 00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071
+          cd ..
+
+          # Symlink manual (replikasi setup.sh, tapi arahin ke fork rifsxd)
+          ln -sf "$(realpath --relative-to=drivers/staging ksun_src/kernel)" drivers/staging/kernelsu
+          grep -q "kernelsu" drivers/staging/Makefile || printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> drivers/staging/Makefile
+          grep -q "drivers/kernelsu/Kconfig" drivers/staging/Kconfig || sed -i '/endmenu/i\source "drivers/kernelsu/Kconfig"' drivers/staging/Kconfig
+
+          echo "=== Verifikasi symlink ==="
+          ls -la drivers/staging/kernelsu
+          ls drivers/staging/kernelsu/core/
 
           # Stub path_umount untuk kernel 4.14
           echo 'int path_umount(struct path *path, int flags) { return 0; }' >> fs/namespace.c
-          
+
           cd ..
 
-      - name: Apply SUSFS Patch
-        continue-on-error: true
-        run: |
-          cd kernel
-          cp ../susfs/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
-          patch -p1 < 50_add_susfs_in_kernel-4.14.patch
-
-      - name: Copy SUSFS Files
+      - name: Copy SUSFS Files (v2.1.0)
         run: |
           cd kernel
           cp ../susfs/kernel_patches/fs/susfs.c fs/
-          cp ../susfs/kernel_patches/fs/sus_su.c fs/
           cp ../susfs/kernel_patches/include/linux/susfs.h include/linux/
-          cp ../susfs/kernel_patches/include/linux/sus_su.h include/linux/
           cp ../susfs/kernel_patches/include/linux/susfs_def.h include/linux/
           echo "=== Verifikasi ==="
-          ls -la include/linux/susfs.h
-          ls -la fs/susfs.c        
+          ls -la include/linux/susfs.h fs/susfs.c include/linux/susfs_def.h
+          grep "SUSFS_VERSION" include/linux/susfs.h
 
-          grep -q "susfs_is_current_ksu_domain" include/linux/susfs.h || \
-          cat >> include/linux/susfs.h << 'EOF'
-
-          static inline bool susfs_is_current_ksu_domain(void) { return false; }
-          static inline bool susfs_is_current_zygote_domain(void) { return false; }
-          EOF
-
-      - name: Fix missing SUSFS symbols
-        run: |
-          cat > /tmp/fix_susfs_inline.py << 'PYEOF'
-          with open('kernel/include/linux/susfs.h', 'r') as f:
-              content = f.read()
-          
-          # Hapus static inline definitions yang konflik
-          content = content.replace(
-              'static inline bool susfs_is_current_ksu_domain(void) { return false; }',
-              ''
-          )
-          content = content.replace(
-              'static inline bool susfs_is_current_zygote_domain(void) { return false; }',
-              ''
-          )
-          print("OK: static inline dihapus dari susfs.h")
-          
-          with open('kernel/include/linux/susfs.h', 'w') as f:
-              f.write(content)
-          PYEOF
-                    python3 /tmp/fix_susfs_inline.py
-                    grep -n "susfs_is_current" kernel/include/linux/susfs.h || true
-         
-      - name: Debug susfs.h content
-        if: always()
-        run: |
-          cd kernel
-          echo "=== susfs.h ==="
-          head -50 include/linux/susfs.h
-          
-      - name: Add SUSFS to Kconfig
-        run: |
-          cd kernel
-          cat >> fs/Kconfig << 'EOF'
-
-          config KSU_SUSFS
-          	bool "KernelSU addon - susfs"
-          	depends on KSU
-          	default y
-          	help
-          	  Enable susfs support for KernelSU.
-          
-          config KSU_SUSFS_SUS_PATH
-          	bool "Enable sus path"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_SUS_MOUNT
-          	bool "Enable sus mount"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_SUS_KSTAT
-          	bool "Enable sus kstat"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_SUS_OVERLAYFS
-          	bool "Enable sus overlayfs"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_TRY_UMOUNT
-          	bool "Enable try umount"
-          	depends on KSU_SUSFS
-          	default n
-          
-          config KSU_SUSFS_SPOOFER
-          	bool "Enable spoofer"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_ENABLE_LOG
-          	bool "Enable log"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_OPEN_REDIRECT
-          	bool "Enable open redirect"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
-          	bool "Enable auto add sus bind mount"
-          	depends on KSU_SUSFS
-          	default y
-          
-          config KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND
-          	bool "Enable auto add try umount for bind"
-          	depends on KSU_SUSFS
-          	default n
-          
-          config KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
-          	bool "Hide KSU SUSFS symbols"
-          	depends on KSU_SUSFS
-          	default n
-          
-          config KSU_SUSFS_SPOOF_BOOTCONFIG
-          	bool "Spoof bootconfig"
-          	depends on KSU_SUSFS
-          	default y  
-          EOF
-                    echo "Kconfig SUSFS ditambah"
-                    grep -c "KSU_SUSFS" fs/Kconfig                     
-      
-      - name: Manual patch fs/open.c for SUSFS
-        run: |
-          cat > /tmp/patch_open.py << 'PYEOF'
-          import sys
-          
-          with open('kernel/fs/open.c', 'r') as f:
-              content = f.read()
-          
-          ok0 = ok1 = False
-          
-          old0 = '#include <linux/fs.h>'
-          new0 = '#include <linux/fs.h>\n#include <linux/susfs.h>'
-          if old0 in content:
-              content = content.replace(old0, new0, 1)
-              ok0 = True
-              print("PATCH 0 OK: include susfs.h ditambah")
-          else:
-              print("WARNING patch 0 tidak ditemukan!")
-          
-          old1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
-          new1 = '\tunsigned int lookup_flags = LOOKUP_FOLLOW;\n\n\t// KernelSU - start'
-          if old1 in content:
-              ok1 = True
-              print("PATCH 1 OK: konteks ditemukan, tidak perlu diubah")
-          else:
-              print("WARNING patch 1 tidak ditemukan!")
-          
-          if not ok0 or not ok1:
-              sys.exit(1)
-          
-          with open('kernel/fs/open.c', 'w') as f:
-              f.write(content)
-          PYEOF
-                    python3 /tmp/patch_open.py   
-           
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
@@ -249,16 +105,14 @@ jobs:
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=n" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_SPOOFER=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_WITH_KPROBES=n" >> kernel/arch/arm64/configs/cepheus_defconfig
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND=n" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo "CONFIG_KSU_SUSFS_SPOOF_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
-          echo 'CONFIG_LOCALVERSION="-TURTLE-SUSFS"' >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> kernel/arch/arm64/configs/cepheus_defconfig
+          echo 'CONFIG_LOCALVERSION="-TURTLE-SUSFS-v2"' >> kernel/arch/arm64/configs/cepheus_defconfig
            
       - name: Patch WALT stub
         run: |
@@ -366,71 +220,19 @@ jobs:
           echo "=== Verifikasi patch deadline.c ==="
           grep -n -A1 -B1 "CONFIG_SCHED_WALT" kernel/sched/deadline.c | head -20
            
-      - name: Patch task_mmu.c for SUSFS
+      - name: Patch task_mmu.c for SUSFS (full file dari raystef66, ada logic sus_ino spoofing)
         run: |
-          cd kernel/fs/proc
-          grep -q "susfs.h" task_mmu.c || \
-            sed -i '1i #ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs.h>\n#endif' task_mmu.c
-       
-      - name: Add INODE_STATE_SUS_KSTAT to susfs_def.h
+          cd kernel
+          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/proc/task_mmu.c" -o fs/proc/task_mmu.c
+          grep -c "susfs" fs/proc/task_mmu.c
+
+      - name: Verifikasi susfs_init sudah baked-in di KSUN 3.2.0-legacy-susfs-v2
         run: |
-          cd kernel/include/linux
-          grep -q "INODE_STATE_SUS_KSTAT" susfs_def.h || \
-            echo "#define INODE_STATE_SUS_KSTAT 2" >> susfs_def.h
-      
-      - name: Add SUSFS stubs
-        run: |
-          # Deklarasi fungsi di header
-          echo 'bool susfs_is_current_ksu_domain(void);' >> kernel/include/linux/susfs.h
-          echo 'bool susfs_is_current_zygote_domain(void);' >> kernel/include/linux/susfs.h
-      
-          # Implementasi stub di fs/
-          cat > kernel/fs/susfs_stub.c << 'EOF'
-          #include <linux/susfs.h>
-      
-          bool susfs_is_current_ksu_domain(void) { return false; }
-          bool susfs_is_current_zygote_domain(void) { return false; }
-          EOF
-      
-          # Tambahkan ke Makefile
-          echo 'obj-y += susfs_stub.o' >> kernel/fs/Makefile
-
-      - name: Inject susfs_init into ksu_core_init
-        run: |
-          cat > /tmp/inject_susfs_init.py << 'PYEOF'
-          import re
-
-          path = "kernel/drivers/kernelsu/core_hook.c"
-          with open(path, "r") as f:
-              lines = f.readlines()
-
-          out = []
-          inside_core_init = False
-          inserted = False
-
-          for line in lines:
-              if re.match(r"\s*void\s+__init\s+ksu_core_init\s*\(", line):
-                  inside_core_init = True
-              if inside_core_init and re.match(r"\s*}\s*", line) and not inserted:
-                  out.append("    susfs_init();\n")
-                  inserted = True
-                  inside_core_init = False
-              out.append(line)
-
-          with open(path, "w") as f:
-              f.writelines(out)
-
-          print("✅ susfs_init injected into existing ksu_core_init")
-          PYEOF
-          python3 /tmp/inject_susfs_init.py
-          grep -n "susfs_init" kernel/drivers/kernelsu/core_hook.c | head -10
-
-      
-      - name: Fix susfs_init call
-        run: |
-          python3 .github/scripts/fix_susfs_init.py
-          grep -n "susfs_init\|susfs.h" kernel/drivers/kernelsu/core_hook.c | head -10          
-      
+          cd kernel
+          echo "=== susfs_init() call di core/init.c (harus sudah ada dari source rifsxd) ==="
+          grep -n "susfs_init" drivers/staging/kernelsu/core/init.c
+          echo "=== susfs_is_current_ksu_domain implementasi (harus di selinux.c) ==="
+          grep -n "susfs_is_current_ksu_domain" drivers/staging/kernelsu/selinux/selinux.c
       - name: Build kernel
         run: |
           cd kernel
@@ -474,12 +276,12 @@ jobs:
           # Jangan copy dtbo.img biar pake bawaan SparkOS
           # Copy modules kalau ada
           find kernel/out -name '*.ko' -exec cp {} AnyKernel3/modules/system/lib/modules/ \;
-          cd AnyKernel3 && zip -r9 ../Cepheus-KSUN+SUSFS-Test.zip *
+          cd AnyKernel3 && zip -r9 ../Cepheus-KSUN3.2-SUSFSv2-Test.zip *
 
       - name: Upload artifact   
         uses: actions/upload-artifact@v4
         with:
-            name: Cepheus-KSUN+SUSFS-Test
+            name: Cepheus-KSUN3.2-SUSFSv2-Test
             path: |
-              Cepheus-KSUN+SUSFS-Test.zip
+              Cepheus-KSUN3.2-SUSFSv2-Test.zip
               kernel/out/arch/arm64/boot/Image.gz-dtb
