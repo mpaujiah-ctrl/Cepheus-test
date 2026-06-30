@@ -79,6 +79,15 @@ jobs:
 
           cd ..
 
+      - name: Add missing KSUN hooks
+        run: |
+          cd kernel
+          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/read_write.c" -o fs/read_write.c
+          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/exec.c" -o fs/exec.c
+          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/input.c" -o fs/input.c
+          echo "=== Verifikasi hooks ==="
+          grep -n "ksu_" fs/read_write.c fs/exec.c fs/input.c
+      
       - name: Copy SUSFS Files (v2.1.0)
         run: |
           cd kernel
