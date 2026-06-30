@@ -78,16 +78,6 @@ jobs:
           echo 'int path_umount(struct path *path, int flags) { return 0; }' >> fs/namespace.c
 
           cd ..
-
-      - name: Add missing KSUN core hooks
-        run: |
-          cd kernel
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/read_write.c" -o fs/read_write.c
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/exec.c" -o fs/exec.c
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/drivers/input/input.c" -o drivers/input/input.c
-          echo "=== Verifikasi hooks ==="
-          grep -n "ksu_handle_vfs_read" fs/read_write.c
-          grep -n "ksu_input_hook" drivers/input/input.c
       
       - name: Copy SUSFS Files (v2.1.0)
         run: |
