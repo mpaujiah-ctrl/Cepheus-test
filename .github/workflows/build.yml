@@ -89,6 +89,12 @@ jobs:
           ls -la include/linux/susfs.h fs/susfs.c include/linux/susfs_def.h
           grep "SUSFS_VERSION" include/linux/susfs.h
 
+          # PENTING: wire susfs.o ke fs/Makefile, kalau enggak susfs.c gak ikut dikompilasi
+          # walaupun filenya ada, jadi semua symbol susfs_* bakal "undefined" pas linking
+          grep -q "susfs.o" fs/Makefile || echo 'obj-$(CONFIG_KSU_SUSFS) += susfs.o' >> fs/Makefile
+          echo "=== Verifikasi Makefile ==="
+          grep "susfs" fs/Makefile
+
       - name: Setup defconfig KSUN
         run: |
           echo "CONFIG_KSU=y" >> kernel/arch/arm64/configs/cepheus_defconfig
