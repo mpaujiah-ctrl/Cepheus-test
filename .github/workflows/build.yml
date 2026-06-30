@@ -82,8 +82,8 @@ jobs:
       - name: Add missing KSUN core hooks
         run: |
           cd kernel
-          curl -sL "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071/kernel/fs/read_write.c" -o drivers/staging/kernelsu/core/fs/read_write.c
-          curl -sL "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071/kernel/input/input_hook.c" -o drivers/staging/kernelsu/core/input/input_hook.c
+          curl -sL "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071/kernel/core/fs/read_write.c" -o drivers/staging/kernelsu/core/fs/read_write.c
+          curl -sL "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071/kernel/core/input/input_hook.c" -o drivers/staging/kernelsu/core/input/input_hook.c
           echo "=== Verifikasi ==="
           grep -n "ksu_handle_vfs_read" drivers/staging/kernelsu/core/fs/read_write.c
           grep -n "ksu_input_hook" drivers/staging/kernelsu/core/input/input_hook.c
