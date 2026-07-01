@@ -86,14 +86,17 @@ jobs:
 
           cd ..
 
-      - name: Add KernelSU Core Hooks (real)
+      - name: Grep KernelSU Hooks
         run: |
           cd kernel
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/read_write.c" -o drivers/staging/kernelsu/core/fs/read_write.c
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/drivers/input/input_hook.c" -o drivers/staging/kernelsu/core/input/input_hook.c
-          
-          grep -q "fs/read_write.o" drivers/staging/kernelsu/core/Makefile || echo "obj-y += fs/read_write.o" >> drivers/staging/kernelsu/core/Makefile
-          grep -q "input/input_hook.o" drivers/staging/kernelsu/core/Makefile || echo "obj-y += input/input_hook.o" >> drivers/staging/kernelsu/core/Makefile
+          echo "=== Cari ksu_handle_vfs_read ==="
+          grep -R "ksu_handle_vfs_read" -n drivers/staging/kernelsu core fs drivers/input || true
+      
+          echo "=== Cari ksu_input_hook ==="
+          grep -R "ksu_input_hook" -n drivers/staging/kernelsu core fs drivers/input || true
+      
+          echo "=== Cari semua ksu_* ==="
+          grep -R "ksu_" -n drivers/staging/kernelsu core fs drivers/input || true
 
       
       - name: Inject manual hook ke kernel/reboot.c (required by KSUN 3.2.0 Kbuild check)
