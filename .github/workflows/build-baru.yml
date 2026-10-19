@@ -300,6 +300,9 @@ jobs:
           make ARCH=arm64 O=out LOCALVERSION=-SPARK CC=clang LD=ld.lld SUBARCH=arm64 \
                CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error" \
                -j"$(nproc --all)" Image.gz-dtb
+
+          ls out/arch/arm64/boot/Image.gz-dtb
+          ls out/arch/arm64/boot/Image
           
       - name: Clone AnyKernel3
         run: |
