@@ -297,7 +297,9 @@ jobs:
           sed -i 's/CONFIG_VDSO=y/# CONFIG_VDSO is not set/' out/.config
           sed -i 's/CONFIG_COMPAT_VDSO=y/# CONFIG_COMPAT_VDSO is not set/' out/.config
           
-          make O=out CC=clang LD=ld.lld -j$(nproc) Image.gz-dtb
+          make ARCH=arm64 O=out LOCALVERSION=-SPARK CC=clang LD=ld.lld SUBARCH=arm64 \
+               CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error" \
+               -j"$(nproc --all)" Image.gz-dtb
           
       - name: Clone AnyKernel3
         run: |
@@ -309,7 +311,7 @@ jobs:
       
       - name: Pack AnyKernel3
         run: |
-            cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+            cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
             cd AnyKernel3 && zip -r9 ../cepheus_SPARK.zip * -x README
 
       - name: Upload artifact   
