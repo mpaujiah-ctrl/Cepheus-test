@@ -19,9 +19,6 @@ jobs:
           sudo apt install -y clang lld llvm bc bison flex libssl-dev libelf-dev build-essential
           sudo apt install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
 
-      - name: Clone AnyKernel3
-        run: git clone --depth=1 https://github.com/osm0sis/AnyKernel3
-
       - name: Fix yamltree.c (stub kosong, solusi dari TURTLE)
         run: |
           cd kernel
@@ -81,6 +78,14 @@ jobs:
           echo "=== Verify Image.gz-dtb ==="
           ls out/arch/arm64/boot/Image.gz-dtb
 
+      - name: Clone AnyKernel3
+        run: |
+            git clone --depth=1 https://github.com/osm0sis/AnyKernel3
+            echo "=== Ganti anykernel.sh & ak3-core.sh ==="
+            cp anykernel.sh AnyKernel3/anykernel.sh
+            cp ak3-core.sh AnyKernel3/tools/ak3-core.sh
+            cat AnyKernel3/anykernel.sh      
+      
       - name: Pack AnyKernel3
         run: |
           cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/          
