@@ -315,7 +315,7 @@ jobs:
       - name: Pack AnyKernel3
         run: |
             cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
-            cd AnyKernel3 && zip -r9 ../cepheus_SPARK.zip * -x README
+            cd AnyKernel3 && zip -r9 ../Cepheus_SPARK.zip * -x README
 
       - name: Upload artifact   
         uses: actions/upload-artifact@v4
