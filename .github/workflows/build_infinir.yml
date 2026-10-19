@@ -1,4 +1,4 @@
-name: Kernel InfiniR A13 - Upgrade KSUN 3.2.0
+name: Kernel InfiniR A13
 
 on:
   workflow_dispatch:
@@ -10,31 +10,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Clone kernel source (raystef66, branch 15.0)
-        run: git clone --depth=1 -b 15.0 https://github.com/raystef66/kernel_xiaomi_cepheus kernel
-
-      - name: Upgrade KernelSU-Next dari v1.39 (81dff86) ke v3.2.0 (00cb93e)
-        run: |
-          cd kernel
-          rm -rf KernelSU-Next
-          mkdir -p KernelSU-Next
-          curl -sL "https://github.com/rifsxd/KernelSU-Next/archive/00cb93e0bc8bf3ca3680c7e8a3d7cf11d0b59071.tar.gz" -o ksun.tar.gz
-          tar -xzf ksun.tar.gz -C KernelSU-Next --strip-components=1
-          rm ksun.tar.gz
-          ls KernelSU-Next/kernel/
-
-      - name: Fix KSU_VERSION fallback (karena pakai tarball, bukan git clone)
-        run: |
-          cd kernel
-          sed -i 's/KSU_VERSION_FALLBACK := 1/KSU_VERSION_FALLBACK := 33129/' KernelSU-Next/kernel/Kbuild
-          grep "KSU_VERSION_FALLBACK" KernelSU-Next/kernel/Kbuild
-      
-      - name: Update defconfig localversion
-        run: |
-          cd kernel
-          sed -i 's/CONFIG_LOCALVERSION="-InfiniR_cepheus_v1.39_KSUN"/CONFIG_LOCALVERSION="-TURTLE-KSUN_3.2.0+SUSFS-V2"/' arch/arm64/configs/cepheus_defconfig
-          grep "CONFIG_LOCALVERSION" arch/arm64/configs/cepheus_defconfig
-
+      - name: Clone kernel source
+        run: git clone --depth=1 -b 13.0 https://github.com/mpaujiah-ctrl/kernel_xiaomi_cepheus kernel
+     
       - name: Install toolchain (clang + GNU cross-compiler)
         run: |
           sudo apt update
@@ -56,47 +34,7 @@ jobs:
           void dt_to_yaml(FILE *outf, struct dt_info *dti) {}
           CEOF
           echo "yamltree.c replaced with stub"
-      
-      - name: Inject manual hook ke kernel/reboot.c (required by KSUN 3.2.0 Kbuild check)
-        run: |
-          cd kernel
-          if ! grep -q "ksu_handle_sys_reboot" kernel/reboot.c; then
-            sed -i '/^SYSCALL_DEFINE4(reboot/i extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg4);' kernel/reboot.c
-            sed -i '/if (magic1 != LINUX_REBOOT_MAGIC1/i \\tksu_handle_sys_reboot(magic1, magic2, cmd, (void __user **)&arg);' kernel/reboot.c
-            echo "=== Hook injected ==="
-            grep -n "ksu_handle_sys_reboot" kernel/reboot.c
-          else
-            echo "=== Hook sudah ada ==="
-          fi
-      
-      - name: Commit perubahan lokal sebelum cherry-pick
-        run: |
-          cd kernel
-          git config user.email "ci@build.local"
-          git config user.name "CI Build"
-          git add -A
-          git commit -m "local changes: defconfig + reboot.c hook" || echo "nothing to commit"
-      
-      - name: Upgrade SUSFS ke v2.1.0 (sinkron sama KSUN 3.2.0)
-        run: |
-          cd kernel
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/susfs.c" -o fs/susfs.c
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/include/linux/susfs.h" -o include/linux/susfs.h
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/include/linux/susfs_def.h" -o include/linux/susfs_def.h
-          grep "SUSFS_VERSION" include/linux/susfs.h
-
-      - name: Sinkronkan fs/stat.c dengan SUSFS v2.1.0 (fix undefined symbol)
-        run: |
-          cd kernel
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/stat.c" -o fs/stat.c
-          grep -c "susfs" fs/stat.c
-
-      - name: Sinkronkan fs/proc/task_mmu.c juga (biasanya sepaket sama stat.c)
-        run: |
-          cd kernel
-          curl -sL "https://raw.githubusercontent.com/raystef66/kernel_xiaomi_cepheus/16.0-ksun/fs/proc/task_mmu.c" -o fs/proc/task_mmu.c
-          grep -c "susfs" fs/proc/task_mmu.c
-                  
+                             
       - name: Enable F2FS optimization di defconfig
         run: |
           cd kernel
@@ -145,15 +83,12 @@ jobs:
 
       - name: Pack AnyKernel3
         run: |
-          cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
-          cp kernel/out/arch/arm64/boot/Image kernel-pure.img
-          cd AnyKernel3 && zip -r9 ../InfiniR_cepheus_v3.2.0_KSUN.zip * -x README
+          cp kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/          
+          cd AnyKernel3 && zip -r9 ../InfiniR.zip * -x README
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: InfiniR-cepheus-v3.2.0-KSUN
+          name: InfiniR-polos
           path: |
-            InfiniR_cepheus_v3.2.0_KSUN.zip
-            kernel/out/arch/arm64/boot/Image.gz-dtb
-            kernel-pure.img
+            InfiniR.zip           
