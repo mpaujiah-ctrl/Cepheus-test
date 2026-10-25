@@ -1,4 +1,4 @@
-name: Kernel SPARK KSUN A13
+name: Kernel SPARK KSUN A13_TESt
 
 on:
   workflow_dispatch:
