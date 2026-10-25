@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Clone kernel source
-        run: git clone --depth=1 -b pyro-34 https://github.com/mpaujiah-ctrl/kernel_cepheus_SPARK kernel
+        run: git clone --depth=1 -b 13_ksu_susfs https://github.com/mpaujiah-ctrl/kernel_cepheus_SPARK kernel
      
       - name: Install toolchain (clang + GNU cross-compiler)
         run: |
